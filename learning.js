@@ -1,0 +1,27 @@
+const DAY=86400000;
+function dueQuestions(now=Date.now()){return QUESTIONS.filter(q=>state.reviews[q.id]&&state.reviews[q.id].due<=now);}
+function updateLearning(q,correct,confidence,now=Date.now()){
+ if(!Object.hasOwn(state.first,q.id))state.first[q.id]=correct;
+ state.weak=state.weak.filter(id=>id!==q.id);
+ if(!correct||confidence!=='sure')state.weak.push(q.id);
+ const prev=state.reviews[q.id];let stage=prev?.stage||0;
+ if(!correct||confidence!=='sure')stage=0;
+ else if(confidence==='sure'&&(!prev||now>=prev.due))stage=Math.min(stage+1,5);
+ const interval=!correct?0:confidence!=='sure'?1:[1,1,3,7,14,30][stage];
+ const due=correct&&confidence==='sure'&&prev&&now<prev.due?prev.due:now+interval*DAY;
+ state.reviews[q.id]={stage,due,last:now,correct,confidence,attempts:(prev?.attempts||0)+1};
+}
+function domainProgress(domain){const qs=QUESTIONS.filter(q=>q.domain===domain),seen=qs.filter(q=>Object.hasOwn(state.first,q.id));return {total:qs.length,seen:seen.length,correct:seen.filter(q=>state.first[q.id]).length,weak:qs.filter(q=>state.weak.includes(q.id)).length,applied:qs.filter(q=>q.level==='applied'&&state.reviews[q.id]?.correct&&state.reviews[q.id]?.confidence==='sure').length};}
+function lessonStatus(id){const qs=QUESTIONS.filter(q=>q.lesson===id),n=qs.filter(q=>Object.hasOwn(state.first,q.id)).length,weak=qs.filter(q=>state.weak.includes(q.id)).length;return weak?`${weak} question${weak===1?'':'s'} to revisit`:n?`${n}/${qs.length} questions attempted`:'Not practiced yet';}
+function sessionUrl(s){return s.mode.startsWith('lesson:')?'practice.html?lesson='+s.mode.slice(7):s.mode==='mixed'?'practice.html?mode=mixed':'practice.html?mode='+s.mode;}
+function recommend(){if(state.session&&state.session.index<state.session.ids.length)return {label:'RESUME YOUR SESSION',title:'Pick up where you left off',body:`Continue with question ${state.session.index+1} of ${state.session.ids.length}. Your submitted answers are saved.`,url:sessionUrl(state.session),cta:'Resume practice →'};
+ const due=dueQuestions();if(due.length)return {label:'RETRIEVAL PRACTICE',title:`${due.length} question${due.length===1?' is':'s are'} due for review`,body:'Try recalling the answer before rereading the lesson. Confident answers gradually return at longer intervals.',url:'practice.html?mode=due',cta:'Start due review →'};
+ if(state.weak.length)return {label:'FOCUSED REVIEW',title:'Close a gap in your understanding',body:`You have ${state.weak.length} missed or uncertain questions. Review the explanation, then try a fresh applied scenario.`,url:'practice.html?mode=weak',cta:'Review weak spots →'};
+ const next=LESSONS.find(l=>!state.reviewed.includes(l.id));if(next)return {label:'CONTINUE YOUR STUDY PATH',title:next.title,body:next.summary,url:'path.html#'+next.id,cta:'Open lesson →'};
+ return {label:'APPLY WHAT YOU LEARNED',title:'Test the decisions behind the definitions',body:'Try the applied question bank, then use the labs to put several concepts together.',url:'practice.html?mode=applied',cta:'Start applied practice →'};
+}
+function unseenFirst(pool){return [...shuffle(pool.filter(q=>!Object.hasOwn(state.first,q.id))),...shuffle(pool.filter(q=>Object.hasOwn(state.first,q.id)))];}
+function saveLab(id,score,total){const old=state.labs[id];state.labs[id]={first:old?.first??score,best:Math.max(old?.best||0,score),last:score,total,attempts:(old?.attempts||0)+1};save();}
+function labRecord(id){const r=state.labs[id];return r?`<p class="small muted">Saved results · first ${r.first}/${r.total} · best ${r.best}/${r.total} · ${r.attempts} attempt${r.attempts===1?'':'s'}</p>`:'<p class="small muted">No completed attempts yet.</p>';}
+function deepLesson(l){const d=DEEP[l.id];return `<section class="lesson-deep"><h2>Distinctions that matter</h2><div class="tablewrap"><table><thead><tr><th scope="col">Compare</th><th scope="col">How to tell them apart</th></tr></thead><tbody>${d.distinctions.map(r=>`<tr><th scope="row">${r[0]}</th><td>${r[1]}</td></tr>`).join('')}</tbody></table></div><h2 class="spacer">Reason through the decision</h2><p>${d.reasoning}</p><div class="transfer"><span class="eyebrow">CHANGE ONE CONDITION</span><h3 class="spacer">${d.variation}</h3><p class="small muted">Say your answer aloud before opening the explanation.</p><details><summary>Compare your reasoning</summary><p>${d.model}</p></details></div>${REFERENCES[l.id]?`<p class="small spacer">Go deeper: <a href="${REFERENCES[l.id][1]}" target="_blank" rel="noopener">${REFERENCES[l.id][0]} ↗</a></p>`:''}${LESSON_LABS[l.id]?`<div class="row spacer">${button('Apply this in the sandbox →','sandbox.html#'+LESSON_LABS[l.id])}</div>`:''}</section>`;}
+function progressPanel(){return `<section class="card"><div class="row spread"><h2>Where to focus</h2><span class="tag">First attempts</span></div><p class="small muted">Review marks and practice results measure different things. Small samples are shown explicitly; these are not readiness estimates.</p>${DOMAINS.map((d,i)=>{const p=domainProgress(i);return `<div class="domain"><div class="row spread"><a href="practice.html?domain=${i}">${d[0]}</a><strong>${p.seen?`${p.correct}/${p.seen}`:'No attempts'}</strong></div><p class="small muted">${p.seen}/${p.total} seen · ${p.weak} to revisit · ${p.applied}/${LESSONS.filter(l=>l.domain===i).length} applied questions last answered correctly with confidence</p></div>`;}).join('')}</section>`;}
