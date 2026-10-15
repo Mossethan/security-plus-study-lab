@@ -54,12 +54,12 @@ const unavailable=env({},true);unavailable.complete('1.1');unavailable.run("mcCr
 const old=a.saved['security-messer-v1'];a.run("mcRender('2.3')");assert.equal(a.saved['security-messer-v1'],old);
 console.log('PASS: 140 new questions; seven adaptive checkpoint sizes; unlock gating; permanent unlocks; full cumulative domain coverage across 84 draws; unseen priority; start/answer/navigation/submit events; reload; confidence and weak-spot resolution; idempotent scoring; immutable results; corrupt and unavailable storage; lesson progress preservation.');
 // Boot the complete script chain in actual shell order to catch missing dependencies on other pages.
-for(const name of ['index','path','practice','exams','sandbox','guide','messer']){
+for(const name of ['index','path','practice','exams','sandbox','guide','messer','account']){
  const html=fs.readFileSync(path.join(root,name+'.html'),'utf8'),nodes=new Map(),main={innerHTML:'',querySelectorAll:()=>[]};
  const node=s=>{if(s==='#main')return main;if(!nodes.has(s))nodes.set(s,{value:'',textContent:'',classList:{add(){},toggle(){}},setAttribute(){},addEventListener(){},focus(){},querySelectorAll:()=>[]});return nodes.get(s);};
- const c={console,URLSearchParams,localStorage:{getItem:()=>null,setItem(){}},document:{querySelector:node,querySelectorAll:()=>[],getElementById:s=>node('#'+s)},window:{addEventListener(){},scrollTo(){}},location:{pathname:'/'+name+'.html',hash:name==='messer'?'#checkpoints':'',search:''},setInterval:()=>1,clearInterval(){}};
+ const c={console,URLSearchParams,CustomEvent:class{},localStorage:{getItem:()=>null,setItem(){}},document:{querySelector:node,querySelectorAll:()=>[],getElementById:s=>node('#'+s),addEventListener(){}},window:{addEventListener(){},dispatchEvent(){},scrollTo(){}},location:{pathname:'/'+name+'.html',hash:name==='messer'?'#checkpoints':'',search:''},setInterval:()=>1,clearInterval(){}};
  vm.createContext(c);for(const match of html.matchAll(/<script src="\/?([^"?]+)(?:\?[^" ]+)?" defer><\/script>/g))vm.runInContext(fs.readFileSync(path.join(root,match[1]),'utf8'),c,{filename:match[1]});
  assert(main.innerHTML.length>100,`${name} renders with the complete script chain`);
  if(name==='index'||name==='path')assert(main.innerHTML.includes('Messer cumulative checkpoints'));
 }
-console.log('PASS: all seven complete page shells boot with the new checkpoint assets and overview/study-path integration.');
+console.log('PASS: all eight complete page shells boot with account sync and existing study features.');

@@ -3,7 +3,7 @@ const mcById=new Map(MC_BANK.map(q=>[q.id,q]));
 let mcState={unlocked:{},sessions:{},seen:{},reviews:{},history:{}},mcStorageOK=true,mcNotice='';
 let mcView='question',mcRoute=null;
 const mcObject=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
-try{const raw=JSON.parse(localStorage.getItem(MC_KEY));if(mcObject(raw))for(const k of Object.keys(mcState))if(mcObject(raw[k]))mcState[k]=raw[k];}catch{mcStorageOK=false;}
+
 function mcObjective(id){return MC_OBJECTIVES.find(o=>o.id===id);}
 function mcScope(id){const o=mcObjective(id);return o?MC_OBJECTIVES.filter(x=>x.domain===o.domain&&Number(x.id)<=Number(id)):[];}
 function mcLessons(id){const ids=mcScope(id).map(o=>o.id);return MESSER_LESSONS.filter(l=>ids.includes(l.objective));}
@@ -15,8 +15,12 @@ function mcValid(s,id){
  const scope=mcScope(id).map(o=>o.id);
  return mcObject(s)&&s.objective===id&&Array.isArray(s.ids)&&s.ids.length===mcSize(id)&&new Set(s.ids).size===s.ids.length&&s.ids.every(qid=>mcById.has(qid)&&scope.includes(mcById.get(qid).objective))&&scope.every(o=>s.ids.some(qid=>mcById.get(qid).objective===o))&&mcObject(s.answers)&&mcObject(s.confidence)&&mcObject(s.orders)&&s.ids.every(qid=>{const order=s.orders[qid],q=mcById.get(qid);return Array.isArray(order)&&order.length===q.options.length&&new Set(order).size===order.length&&order.every(v=>Number.isInteger(v)&&v>=0&&v<q.options.length)&&(!Object.hasOwn(s.answers,qid)||Number.isInteger(s.answers[qid])&&s.answers[qid]>=0&&s.answers[qid]<q.options.length)&&(!Object.hasOwn(s.confidence,qid)||['sure','unsure'].includes(s.confidence[qid]));})&&Number.isInteger(s.index)&&s.index>=0&&s.index<s.ids.length&&Number.isFinite(s.started)&&(s.finished===null||Number.isFinite(s.finished)&&s.finished>=s.started);
 }
+function loadCheckpointProgress(){mcState={unlocked:{},sessions:{},seen:{},reviews:{},history:{}};
+try{const raw=JSON.parse((typeof StudyStorage==='undefined'?localStorage:StudyStorage).getItem(MC_KEY));if(mcObject(raw))for(const k of Object.keys(mcState))if(mcObject(raw[k]))mcState[k]=raw[k];}catch{mcStorageOK=false;}
 for(const o of MC_OBJECTIVES){if(mcState.sessions[o.id]&&!mcValid(mcState.sessions[o.id],o.id)){delete mcState.sessions[o.id];mcNotice='One incompatible checkpoint attempt could not be resumed. Your lesson notes and other progress are preserved.';}mcState.history[o.id]=(Array.isArray(mcState.history[o.id])?mcState.history[o.id]:[]).filter(h=>mcObject(h)&&Number.isInteger(h.correct)&&Number.isInteger(h.total)&&h.total>0&&h.correct>=0&&h.correct<=h.total&&Number.isFinite(h.finished)).slice(0,10);}
-function mcSave(){try{localStorage.setItem(MC_KEY,JSON.stringify(mcState));}catch{mcStorageOK=false;}const el=document.querySelector('#mc-save');if(el)el.textContent=mcStorageOK?'Saved in this browser. You can leave and resume.':'Browser storage is unavailable. This checkpoint may be lost when you leave or reload.';}
+}
+loadCheckpointProgress();
+function mcSave(){try{(typeof StudyStorage==='undefined'?localStorage:StudyStorage).setItem(MC_KEY,JSON.stringify(mcState));}catch{mcStorageOK=false;}const el=document.querySelector('#mc-save');if(el)el.textContent=mcStorageOK?'Saved in this browser. You can leave and resume.':'Browser storage is unavailable. This checkpoint may be lost when you leave or reload.';}
 function mcSync(){let changed=false;for(const o of MC_OBJECTIVES)if(!mcUnlocked(o.id)&&mcLessons(o.id).length&&!mcMissing(o.id).length){mcState.unlocked[o.id]=true;changed=true;}if(changed)mcSave();}
 function mcWeak(){return MC_BANK.filter(q=>mcState.reviews[q.id]?.weak===true);}
 function mcWeakTopics(){const out=new Map();for(const q of mcWeak()){if(!out.has(q.lesson))out.set(q.lesson,{lesson:MESSER_LESSONS.find(l=>l.id===q.lesson),count:0});out.get(q.lesson).count++;}return [...out.values()].sort((a,b)=>b.count-a.count);}
