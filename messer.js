@@ -2,11 +2,14 @@ const MESSER_KEY='security-messer-v1';
 const mNormalized=new WeakSet();
 const mLabelOrders=new Map();
 let messerState={lessons:{},last:''},messerStorageOK=true;
-try{const data=JSON.parse(localStorage.getItem(MESSER_KEY));if(data&&data.lessons&&typeof data.lessons==='object'&&!Array.isArray(data.lessons))messerState={lessons:data.lessons,last:data.last||''};}catch(e){messerStorageOK=false;}
+function loadMesserProgress(){messerState={lessons:{},last:''};
+try{const data=JSON.parse((typeof StudyStorage==='undefined'?localStorage:StudyStorage).getItem(MESSER_KEY));if(data&&data.lessons&&typeof data.lessons==='object'&&!Array.isArray(data.lessons))messerState={lessons:data.lessons,last:data.last||''};}catch(e){messerStorageOK=false;}
+}
+loadMesserProgress();
 function mProgress(l){const old=messerState.lessons[l.id]||{};if(typeof old==='object'&&mNormalized.has(old))return old;const clean={watched:old.watched===true,notes:typeof old.notes==='string'?old.notes:'',answers:{},choices:{},matches:{},checked:old.checked===true,best:Number.isFinite(old.best)?old.best:null,bestTotal:Number.isInteger(old.bestTotal)&&old.bestTotal>0?old.bestTotal:(l.baseQuestionCount??l.questions.length)+l.activity.items.length};l.questions.forEach((q,i)=>{for(const key of ['answers','choices']){const a=old[key]?.[i];if(Number.isInteger(a)&&a>=0&&a<q.options.length)clean[key][i]=a;}});l.activity.items.forEach((_,i)=>{const a=old.matches?.[i];if(Number.isInteger(a)&&a>=0&&a<l.activity.labels.length)clean.matches[i]=a;});if(Object.keys(clean.matches).length!==l.activity.items.length)clean.checked=false;messerState.lessons[l.id]=clean;mNormalized.add(clean);return clean;}
 function mDone(l){const p=mProgress(l);return l.questions.every((_,i)=>Number.isInteger(p.answers[i]))&&p.checked;}
 function mScore(l){const p=mProgress(l);return l.questions.filter((q,i)=>p.answers[i]===q.answer).length+(p.checked?l.activity.items.filter((item,i)=>p.matches[i]===item[1]).length:0);}
-function mSave(){try{localStorage.setItem(MESSER_KEY,JSON.stringify(messerState));}catch(e){messerStorageOK=false;}const status=document.querySelector('#messer-storage');if(status)status.textContent=messerStorageOK?'Saved on this browser.':'Browser storage is unavailable. Keep a copy of your notes; progress may not survive closing this page.';}
+function mSave(){try{(typeof StudyStorage==='undefined'?localStorage:StudyStorage).setItem(MESSER_KEY,JSON.stringify(messerState));}catch(e){messerStorageOK=false;}const status=document.querySelector('#messer-storage');if(status)status.textContent=messerStorageOK?'Saved on this browser.':'Browser storage is unavailable. Keep a copy of your notes; progress may not survive closing this page.';}
 function mUpdateBest(l){if(mDone(l)){const p=mProgress(l),total=l.questions.length+l.activity.items.length;p.best=p.bestTotal===total?Math.max(p.best||0,mScore(l)):mScore(l);p.bestTotal=total;}}
 function mRefresh(focus){messer();if(focus)document.getElementById(focus)?.focus({preventScroll:true});}
 function messer(){
