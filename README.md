@@ -11,9 +11,9 @@ The site works at a repository URL such as `https://USERNAME.github.io/security-
 ## Features
 
 - Study path, defensive labs and reference guide
-- 38 Professor Messer companion lessons
-- 329 practice items and 90-minute exam simulation
-- Seven cumulative checkpoints with a separate 140-question bank
+- 56 Professor Messer companion lessons (through Hardening Techniques; all of Domain 2)
+- 433 practice items and 90-minute exam simulation
+- Nine cumulative checkpoints with a separate 196-question bank
 
 Notes, quiz attempts and study progress stay in the visitor’s browser. Browser storage from another domain is not transferred automatically.
 

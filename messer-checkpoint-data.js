@@ -2,7 +2,7 @@
 // Row shape: Messer lesson ID, scenario, four options, correct index, explanation.
 const MC_OBJECTIVES=[
  ['1.1','Security controls'],['1.2','Security concepts'],['1.3','Change management'],['1.4','Cryptographic solutions'],
- ['2.1','Threat actors'],['2.2','Threat vectors and attack surfaces'],['2.3','Vulnerabilities']
+ ['2.1','Threat actors'],['2.2','Threat vectors and attack surfaces'],['2.3','Vulnerabilities'],['2.4','Indicators of malicious activity'],['2.5','Mitigation techniques']
 ].map(([id,title])=>({id,title,domain:Number(id.split('.')[0])}));
 const MC_BANK=[];
 function mcBankAdd(objective,rows){rows.forEach((r,i)=>MC_BANK.push({id:`mc-${objective}-${String(i+1).padStart(2,'0')}`,objective,lesson:r[0],prompt:r[1],options:r[2],answer:r[3],why:r[4]}));}
@@ -159,4 +159,682 @@ mcBankAdd('2.3',[
  ['mobile-device-vulnerabilities','An iPhone has been modified to bypass its normal platform restrictions, then fails a company compliance check. Which modification is most consistent with that finding?',['A normal approved app update','A new lock-screen image','A valid certificate renewal','Jailbreaking'],3,'Jailbreaking bypasses iOS restrictions and can undermine the expected security boundary. Device compliance can inform whether access is permitted.'],
  ['zero-day-vulnerabilities','A flaw unknown to the vendor is already being exploited, and no fix is available. Which description best fits the timing?',['Zero-day exploitation','A completed patch rollout','A planned access review','Routine certificate expiry'],0,'The exploitation precedes the normal opportunity for defenders to receive and deploy a vendor fix. Exposure reduction and investigation cannot wait for patch availability.'],
  ['zero-day-vulnerabilities','A newly disclosed exploited flaw has no patch yet, but the vendor provides a tested configuration mitigation. What is the strongest immediate response?',['Wait without changing exposure until patch day','Apply applicable validated mitigation, monitor for exploitation and track the permanent fix','Treat the workaround as proof no investigation is needed','Disable all monitoring to conserve resources'],1,'A validated mitigation can reduce risk now while the team investigates and prepares permanent remediation. A workaround does not establish that compromise never occurred.']
+]);
+
+// Original cumulative scenarios for the completed Domain 2 path.
+mcBankAdd("2.4", [
+  [
+    "an-overview-of-malware",
+    "A clinic restores access after an extortion incident, but the attacker publishes a sample of stolen records. Which remaining issue must the response team address?",
+    [
+      "Only CPU capacity, because data theft cannot coexist with encryption",
+      "Only the original ransom note, because the published sample is irrelevant",
+      "Disclosure and possible continued unauthorized access, despite restored availability",
+      "Only availability, because successful restoration settles all other impacts"
+    ],
+    2,
+    "Recovery of service does not reverse data exposure. Assess what was taken, the intrusion scope and whether access or persistence remains."
+  ],
+  [
+    "an-overview-of-malware",
+    "Two endpoints show the same malicious process communicating with a new external host. The incident lead authorizes containment. Which action best supports both limiting spread and later investigation?",
+    [
+      "Restore the shared drive while leaving the infected endpoints unrestricted",
+      "Isolate the affected hosts and preserve relevant evidence under the response procedure",
+      "Wipe both hosts immediately before collecting any volatile or log evidence",
+      "Wait for additional infections so the scope becomes easier to count"
+    ],
+    1,
+    "Containment limits ongoing impact. Evidence preservation and coordinated investigation are still needed; recovery alone does not stop active infected endpoints."
+  ],
+  [
+    "viruses-and-worms",
+    "A security team observes one vulnerable service infecting other reachable instances overnight, without email or file-opening activity. Which explanation best fits this spread?",
+    [
+      "An autonomously propagating worm exploiting the exposed service",
+      "A document macro requiring a user to open each new infected copy",
+      "A dormant logic bomb that never communicates with peers",
+      "A passive keylogger that only records local keystrokes"
+    ],
+    0,
+    "Automated service-to-service replication supports a worm hypothesis. The absence of email activity does not rule out malware propagation."
+  ],
+  [
+    "viruses-and-worms",
+    "Disk scanning finds no familiar malware file, but process telemetry shows an unusual interpreter chain and malicious activity in memory. What is the strongest next assessment?",
+    [
+      "Close the incident because every malicious program needs a standalone EXE",
+      "Treat the signed interpreter as proof the entire command chain was authorized",
+      "Assume the traffic must be DNS amplification because disk scanning was clean",
+      "Investigate memory and interpreter behavior rather than excluding fileless techniques"
+    ],
+    3,
+    "A clean file scan is only one observation. Memory-based execution and misuse of legitimate interpreters require other evidence sources."
+  ],
+  [
+    "spyware-and-bloatware",
+    "A free browser add-on quietly transmits internal page contents to an unrelated analytics endpoint. A different unused vendor utility merely consumes startup resources. Which distinction is best supported?",
+    [
+      "The vendor utility is necessarily a worm while the add-on is harmless",
+      "Only a program outside the browser can collect private information",
+      "The add-on shows surveillance behavior; the utility is unnecessary software without proven spying",
+      "Both are confirmed ransomware because each uses memory"
+    ],
+    2,
+    "Classify by observed behavior. Unauthorized data collection supports spyware; unnecessary resource use by itself supports a bloatware assessment."
+  ],
+  [
+    "spyware-and-bloatware",
+    "IT wants to reduce unnecessary preinstalled programs across 80 new laptops while preserving supported business applications. Which approach is strongest?",
+    [
+      "Disable all startup logging so overhead cannot be observed",
+      "Test an approved software baseline, deploy it consistently and verify the result",
+      "Let each user remove random system components with permanent admin rights",
+      "Delete every signed vendor component without evaluating dependencies"
+    ],
+    1,
+    "A validated baseline provides repeatable control over software and dependencies. Uncontrolled removal can harm required functions and obscure what changed."
+  ],
+  [
+    "other-malware-types",
+    "After an insider is dismissed, a previously planted task deletes selected project files only when that person’s account is disabled. Which feature determines the most specific classification?",
+    [
+      "A condition-triggered malicious payload characteristic of a logic bomb",
+      "Autonomous network replication characteristic of a worm",
+      "A copied radio identifier characteristic of RFID cloning",
+      "A forged DNS answer characteristic of cache poisoning"
+    ],
+    0,
+    "The account event is the activation condition. The scenario does not describe self-propagation or a naming-system attack."
+  ],
+  [
+    "other-malware-types",
+    "An investigator suspects a privileged malicious component is hiding processes from tools on the compromised operating system. What is the most defensible approach?",
+    [
+      "Accept the suspect OS process list as conclusive proof nothing is running",
+      "Assume replacing the user’s wallpaper removes the privileged component",
+      "Reclassify it as bloatware solely because normal tools cannot see it",
+      "Consider a rootkit and corroborate using trusted investigation tools outside the suspect OS"
+    ],
+    3,
+    "A rootkit can interfere with the view exposed by the OS. Independent trusted evidence can be needed when the investigation environment itself may be altered."
+  ],
+  [
+    "physical-attacks",
+    "A data-center outage begins after a visitor tampers with the room’s cooling controls. The servers have strong login policies. Which overlooked dependency best explains the impact?",
+    [
+      "DNS record signing, because it powers the cooling system",
+      "Application allowlisting alone, because it prevents all physical interference",
+      "Physical environmental controls supporting service availability",
+      "Password complexity alone, because cooling cannot affect computing"
+    ],
+    2,
+    "Environmental infrastructure is part of availability. Logical controls do not replace physical protection of cooling, power and access."
+  ],
+  [
+    "physical-attacks",
+    "An access log shows an employee badge used at two separate entrances at an implausibly close time. The employee has the original badge. What hypothesis and response are most appropriate?",
+    [
+      "Conclude that the event must be an online password spray",
+      "Investigate possible badge cloning and revoke the exposed identifier if confirmed",
+      "Assume possession of the original proves no copy can exist",
+      "Reissue the same identifier and keep all existing copies valid"
+    ],
+    1,
+    "Possession of the original credential does not exclude copying. Correlate evidence and revoke compromised credentials rather than preserving the same access value."
+  ],
+  [
+    "denial-of-service",
+    "A retailer’s edge firewall drops attack packets successfully, but legitimate customers still cannot traverse its fully saturated upstream link. Which change targets the actual bottleneck?",
+    [
+      "Coordinate mitigation with an upstream provider before the traffic reaches that link",
+      "Add a narrower deny rule only after the same saturated link",
+      "Increase application password length while keeping the network path unchanged",
+      "Move the access logs to a different folder on the web server"
+    ],
+    0,
+    "Downstream rejection does not undo bandwidth consumption on the ingress link. Upstream filtering or scrubbing must address that constraint."
+  ],
+  [
+    "denial-of-service",
+    "Attack traffic consists of large replies from legitimate internet services that the victim never queried. The queries used the victim’s forged source address. Which explanation is strongest?",
+    [
+      "A direct file-infecting virus executing only on the victim",
+      "A legitimate zone transfer requested by the victim",
+      "A rootkit hidden inside every responding service",
+      "A reflected attack, with amplification if replies exceed request size"
+    ],
+    3,
+    "The responder reflects traffic toward the spoofed source. Amplification depends on response-to-request size, not simply on reflection occurring."
+  ],
+  [
+    "dns-attacks",
+    "Customers are redirected after an attacker logs into the domain registrar and changes authoritative nameservers. Clearing one laptop’s DNS cache will not resolve the underlying issue. What must be secured first?",
+    [
+      "Only the office Wi-Fi encryption key",
+      "The organization’s printer queue instead of its domain controls",
+      "The compromised registrar account and unauthorized domain-management changes",
+      "Only the laptop’s local DNS cache, because authoritative records are unaffected"
+    ],
+    2,
+    "The attacker controls an authoritative management path. Restore and secure that control, then assess downstream caches and any exposed users or sessions."
+  ],
+  [
+    "dns-attacks",
+    "A resolver accepts a false cached address for a real domain while the registrar’s records remain correct. Which control most directly helps validate signed DNS answers?",
+    [
+      "A longer local workstation password as the only control",
+      "Proper DNSSEC validation through a trusted chain",
+      "A familiar website logo alone",
+      "HTTP without certificate checks"
+    ],
+    1,
+    "DNSSEC can detect invalid signed DNS data when correctly deployed and validated. It is not query encryption and does not certify website content."
+  ],
+  [
+    "wireless-attacks",
+    "Employees connect to a strong-signal hotspot with the corporate SSID, but the authentication server presents an unexpected certificate. What is the safest interpretation and action?",
+    [
+      "Possible impersonation; stop and verify the authentication-server identity",
+      "The matching SSID guarantees the infrastructure is corporate",
+      "Strong signal proves the certificate warning is a false positive",
+      "Certificate validation should be disabled permanently to improve connectivity"
+    ],
+    0,
+    "An evil twin can copy a network name. Server identity validation is an important independent trust check and should not be bypassed for convenience."
+  ],
+  [
+    "wireless-attacks",
+    "A warehouse’s clients disconnect after forged management frames. Another floor loses Wi-Fi because a transmitter jams the channel. Which distinction matters when selecting controls?",
+    [
+      "Changing a passphrase removes all physical interference",
+      "All wireless disconnects prove a stolen password",
+      "PMF guarantees availability under every radio attack",
+      "PMF can address supported forged-frame cases but does not prevent RF jamming"
+    ],
+    3,
+    "Management-frame protection and physical-layer availability address different mechanisms. Supported PMF does not make the shared radio medium immune to interference."
+  ],
+  [
+    "on-path-attacks",
+    "A laptop’s gateway IP becomes associated with an unfamiliar MAC address, and traffic starts passing through a nearby host. What attack path should be investigated?",
+    [
+      "A registrar account takeover proven by the MAC address alone",
+      "A cryptographic collision proven by ordinary routing",
+      "Local ARP manipulation enabling on-path interception",
+      "An offline hash-cracking process that never contacts the LAN"
+    ],
+    2,
+    "ARP affects local IP-to-MAC resolution. A forged mapping can place a host in the forwarding path, without by itself breaking correctly validated TLS."
+  ],
+  [
+    "on-path-attacks",
+    "A remote worker must use an untrusted network. Which behavior best preserves protection against an intermediary impersonating a legitimate HTTPS service?",
+    [
+      "Treat a familiar SSID as equivalent to server authentication",
+      "Use correctly validated TLS and reject unexpected identity or trust failures",
+      "Trust every certificate as long as the page resembles the real service",
+      "Use HTTP because encrypted traffic cannot cross untrusted networks"
+    ],
+    1,
+    "Transport security depends on validating the intended endpoint, not merely seeing encryption somewhere or recognizing the network name."
+  ],
+  [
+    "replay-attacks",
+    "A remote protocol accepts the same captured login response repeatedly because it checks authenticity but never checks whether the exchange is new. What is missing?",
+    [
+      "Validated freshness or anti-replay state such as a one-time challenge",
+      "A larger account avatar",
+      "A second copy of the same reusable response",
+      "A shorter server log-retention period"
+    ],
+    0,
+    "A valid old response can still be inappropriate for a new exchange. Fresh challenges or equivalent protocol mechanisms must be checked and reuse rejected."
+  ],
+  [
+    "replay-attacks",
+    "A defender finds evidence that an attacker reused a captured authenticated browser cookie after the employee changed a password. What action directly addresses the continuing access?",
+    [
+      "Assume the password change necessarily ended every existing session",
+      "Only change the cookie’s visible display name",
+      "Disable TLS to force the browser to reconnect",
+      "Invalidate the affected session tokens and require fresh authentication"
+    ],
+    3,
+    "Session credentials may remain valid independently of a password change. Explicit invalidation addresses that exposed access path."
+  ],
+  [
+    "malicious-code",
+    "An otherwise normal office application launches a scripting interpreter immediately after a user enables document macros, then contacts an unknown host. What should the analyst prioritize?",
+    [
+      "Assume documents can contain only static text",
+      "Ignore the connection unless a known malware filename exists",
+      "Correlate the document, process chain and network activity as possible malicious execution",
+      "Whitelist the full chain because the interpreter is signed"
+    ],
+    2,
+    "A trusted application and interpreter can be abused together. Evaluate the behavior and origin of the instructions rather than trusting the executable names alone."
+  ],
+  [
+    "malicious-code",
+    "A support team needs scripting for approved maintenance, but attackers have used the same interpreter. Which policy best preserves needed work while reducing misuse?",
+    [
+      "Assume that all interpreter activity has the same intent",
+      "Limit approved execution contexts and privileges and retain useful process and script logs",
+      "Grant every script unrestricted administrator access",
+      "Disable all script telemetry while leaving execution unrestricted"
+    ],
+    1,
+    "Controlled execution, least privilege and visibility reduce risk without pretending the tool is inherently safe or always malicious."
+  ],
+  [
+    "application-attacks",
+    "A patient portal verifies that a user is signed in but trusts an owner identifier supplied by the browser when returning a document. What is the core flaw?",
+    [
+      "The server fails to authorize the authenticated user for the requested object",
+      "The browser window is not large enough",
+      "The portal needs only a more memorable document ID",
+      "Authentication automatically grants access to every patient record"
+    ],
+    0,
+    "Identity verification is not object-level permission. Enforce access to each document using trustworthy server-side authorization."
+  ],
+  [
+    "application-attacks",
+    "A report viewer permits manipulated paths to reach files outside its report directory. Which change most directly addresses the violated boundary?",
+    [
+      "Only hide the path field in the UI",
+      "Allow the browser to supply a trusted root directory",
+      "Increase failed-login lockout duration without changing file access",
+      "Use safe path handling and enforce the allowed directory boundary"
+    ],
+    3,
+    "A traversal flaw concerns filesystem scope. UI concealment and unrelated authentication settings do not enforce that server-side boundary."
+  ],
+  [
+    "cryptographic-attacks",
+    "A gateway permits both current TLS and a deprecated weak protocol. An active intermediary induces the weaker choice. Which remediation best addresses this scenario?",
+    [
+      "Only increase the website’s image resolution",
+      "Treat successful connection establishment as proof of adequate security",
+      "Disable unacceptable fallback protocols and enforce the required minimum protection",
+      "Keep the weak option but rename it in documentation"
+    ],
+    2,
+    "A downgrade uses an available weaker option. The acceptable negotiation range must be constrained rather than relying on clients always choosing the best option."
+  ],
+  [
+    "cryptographic-attacks",
+    "An attacker searches large sets of different documents for any pair with matching digests. Which property is being attacked?",
+    [
+      "Physical security of the server room",
+      "Collision resistance using a birthday-style search",
+      "Confidentiality of DNS queries solely through domain registration",
+      "Recovery of one specified user’s plaintext password in every case"
+    ],
+    1,
+    "Finding any matching pair is a collision problem. It differs from finding a preimage for one specified digest or recovering a private key."
+  ],
+  [
+    "password-attacks",
+    "An identity system records one password candidate tried across 900 users, with no individual account near its lockout threshold. Which detection approach best fits?",
+    [
+      "Correlate failures across accounts to identify a password spray",
+      "Wait until one user receives thousands of attempts before investigating",
+      "Assume the absence of lockouts proves normal behavior",
+      "Classify it as offline cracking despite requests reaching the sign-in service"
+    ],
+    0,
+    "Per-account thresholds can miss distributed guessing. The cross-account pattern supports spraying and requires correlation over an appropriate time window."
+  ],
+  [
+    "password-attacks",
+    "A company’s credential pairs leaked from an unrelated shopping site and are now being tried against its VPN. Which recommendation most directly addresses the reuse component?",
+    [
+      "One shared password across all services for consistency",
+      "A shorter password to reduce typing mistakes",
+      "Keeping exposed passwords because only the shopping site was breached",
+      "Unique passwords per service, complemented by strong MFA and monitoring"
+    ],
+    3,
+    "Credential stuffing depends on reuse of breached pairs. Unique secrets limit reuse, while strong MFA and monitoring provide additional protection."
+  ],
+  [
+    "indicators-of-compromise",
+    "A service account downloads 30 times its normal data volume and then creates an unexplained external connection. A scheduled export might also explain the event. What is the best conclusion?",
+    [
+      "A scheduled task possibility proves the event is harmless",
+      "No investigation is needed unless the account locks out",
+      "Treat it as a suspicious hypothesis and validate the job, identity and transfer evidence",
+      "The volume alone conclusively identifies a nation-state attacker"
+    ],
+    2,
+    "An anomaly needs context. Correlating authorized jobs with process, account and network evidence can distinguish normal work from possible exfiltration."
+  ],
+  [
+    "indicators-of-compromise",
+    "An audit collector has a two-hour gap during an unexplained privileged session. Which evidence would best help distinguish failure from tampering?",
+    [
+      "A clean desktop wallpaper after the interval",
+      "Collector health, configuration changes and independent endpoint or network records",
+      "Only the absence of entries in the same missing interval",
+      "The user’s job title as conclusive evidence"
+    ],
+    1,
+    "Independent records and collection health provide context when one source is incomplete. A gap does not prove either safety or deliberate interference."
+  ],
+  [
+    "denial-of-service",
+    "A search API is unavailable despite normal bandwidth because requests repeatedly trigger expensive database work. Which mitigation is best targeted?",
+    [
+      "Limit and validate expensive operations while controlling application resource use",
+      "Only purchase additional inbound bandwidth",
+      "Disable all database audit logs",
+      "Rotate the building’s RFID badges as the sole response"
+    ],
+    0,
+    "The bottleneck is application processing or a dependent database, not necessarily the network link. Control the costly operation and verify the actual constrained resource."
+  ],
+  [
+    "dns-attacks",
+    "An employee enters the company name with a transposed letter and reaches a fraudulent site. The legitimate domain’s records are intact. Which action best addresses the user-facing mechanism?",
+    [
+      "Assume the legitimate registrar account was necessarily hijacked",
+      "Clear the cache as proof every look-alike domain will disappear",
+      "Disable all certificate validation for the fraudulent page",
+      "Recognize the look-alike name and use a verified trusted address"
+    ],
+    3,
+    "Typosquatting exploits a different, confusing domain name. It does not require changing the authentic domain’s records or compromising the local resolver."
+  ],
+  [
+    "wireless-attacks",
+    "An employee installs an unapproved home router in a conference room to improve signal. It does not copy a corporate SSID. Which classification is still justified?",
+    [
+      "Authorized AP because the installer is an employee",
+      "RF jammer solely because it transmits Wi-Fi",
+      "Rogue access point because it is unauthorized infrastructure",
+      "Evil twin only, because every unauthorized AP impersonates another name"
+    ],
+    2,
+    "Rogue refers to unauthorized deployment. Impersonation is an additional characteristic of an evil twin, not a requirement for every rogue AP."
+  ],
+  [
+    "application-attacks",
+    "A signed application loads its helper library from a directory that ordinary users can modify. An attacker places a replacement there. Which hardening action is most direct?",
+    [
+      "Only change the browser’s homepage",
+      "Secure the library-loading path and directory permissions and validate approved components",
+      "Trust every library because the parent executable is signed",
+      "Remove all network ACLs to simplify loading"
+    ],
+    1,
+    "A trusted parent can load untrusted code through unsafe search paths. Component provenance and write permissions are essential to defend that boundary."
+  ],
+  [
+    "password-attacks",
+    "An attacker steals salted password hashes and performs local guessing. Why is disabling the affected online login page insufficient to stop that calculation?",
+    [
+      "The stolen data can be tested without requests to the live service",
+      "Account lockouts are automatically enforced on every local CPU",
+      "Salts let the server remotely erase every stolen copy",
+      "Changing a DNS record encrypts the attacker’s disk"
+    ],
+    0,
+    "Offline computations continue independently. Appropriate password hashing slows guesses; response also considers resets, exposure and any later use of recovered credentials."
+  ],
+  [
+    "indicators-of-compromise",
+    "A worker’s account shows impossible travel, but one event came from a documented corporate VPN exit node. What should the analyst do?",
+    [
+      "Ignore all future location alerts for the entire organization",
+      "Declare compromise from travel speed alone despite the known explanation",
+      "Conclude the VPN guarantees all account activity is legitimate",
+      "Adjust the hypothesis using that context and correlate device and session evidence"
+    ],
+    3,
+    "A known VPN can explain location differences. It reduces one concern without proving every related session is authorized or making other evidence irrelevant."
+  ]
+]);
+mcBankAdd("2.5", [
+  [
+    "segmentation-and-access-control",
+    "A guest device can reach the payroll subnet even though each has its own VLAN. The router currently permits all inter-VLAN traffic. What should change?",
+    [
+      "Assume separate VLAN numbers already guarantee isolation",
+      "Publish a warning asking guest users not to open payroll",
+      "Enforce explicit permitted flows and block unnecessary guest-to-internal routing",
+      "Only rename the VLANs to indicate trust levels"
+    ],
+    2,
+    "Routing policy determines reachable paths across VLANs. A logical boundary needs enforcement and validation, not just a different identifier."
+  ],
+  [
+    "segmentation-and-access-control",
+    "A payment kiosk is required to execute only vendor-approved software. Which control most directly satisfies this requirement?",
+    [
+      "A reminder in the user manual without execution controls",
+      "A maintained application allowlist with suitable identity and enforcement rules",
+      "A denylist containing three known malware filenames only",
+      "An unrestricted local administrator account for the kiosk user"
+    ],
+    1,
+    "The requirement is approved-only execution. A short list of known prohibited programs cannot enforce that positive approval boundary."
+  ],
+  [
+    "segmentation-and-access-control",
+    "A deny rule blocks a malicious executable by its filename. A renamed copy then runs. What lesson should guide the next control design?",
+    [
+      "Use stronger executable identity and appropriate enforcement rather than relying only on the name",
+      "Renaming proved the code became harmless",
+      "Add a longer desktop shortcut label as the only safeguard",
+      "Remove execution monitoring because naming is unreliable"
+    ],
+    0,
+    "Names are mutable. Hash, publisher, path and behavior controls have different strengths and maintenance needs; select appropriate layered enforcement."
+  ],
+  [
+    "segmentation-and-access-control",
+    "An application tier must reach one database port but must not administer the database host. Which rule set best fits?",
+    [
+      "Permit every port between all server VLANs",
+      "Trust any packet originating from an internal address",
+      "Deny the database port but allow all administrative services",
+      "Permit the required application-to-database service and restrict administrative flows separately"
+    ],
+    3,
+    "Least-privilege network access follows the required flow. Permission for application traffic does not imply permission to administer the host."
+  ],
+  [
+    "segmentation-and-access-control",
+    "A new ACL blocks malicious lateral movement but also prevents an approved backup job. What is the best next step?",
+    [
+      "Disable backups indefinitely because all blocked flows are unwanted",
+      "Assume the backup software is malicious solely because it was blocked",
+      "Validate the required backup flow and add a narrow approved exception while retaining restrictions",
+      "Replace the policy with an unrestricted any-to-any rule permanently"
+    ],
+    2,
+    "Security policy must support justified business traffic without broad rollback. Test both the necessary exception and the prohibited flows."
+  ],
+  [
+    "segmentation-and-access-control",
+    "An auditor asks for evidence that a network boundary isolates a research device. Which evidence is strongest?",
+    [
+      "Only a different DHCP hostname for the device",
+      "Tests showing required connections succeed and prohibited paths are blocked by enforced rules",
+      "Only a diagram placing the device in a differently colored box",
+      "Only the fact that the switch has VLAN support"
+    ],
+    1,
+    "Design intent is useful, but behavior and enforced policy demonstrate the actual boundary. Positive and negative tests reveal both missing access and excess access."
+  ],
+  [
+    "mitigation-techniques",
+    "A vendor patch is not yet available for an exposed service. Operations still require it this week. Which response best manages the interim risk?",
+    [
+      "Restrict exposure with approved compensating controls, monitoring and a dated review plan",
+      "Silently accept unrestricted exposure forever",
+      "Disable monitoring to prevent alerts until the patch exists",
+      "Assume endpoint disk encryption removes the remote service flaw"
+    ],
+    0,
+    "Interim controls should reduce the specific exposure and have accountability. They do not mean the underlying vulnerability has been repaired."
+  ],
+  [
+    "mitigation-techniques",
+    "A contractor needs elevated access only to restart one service during a maintenance window. Which access decision is strongest?",
+    [
+      "Grant permanent organization-wide administrator rights",
+      "Share the owner’s personal administrator password",
+      "Disable authorization for all contractors during the window",
+      "Grant the necessary scoped permission temporarily and remove it after the work"
+    ],
+    3,
+    "Least privilege includes action, resource and duration. Broad standing access increases risk beyond what the task requires."
+  ],
+  [
+    "mitigation-techniques",
+    "A quarantined endpoint passes a malware scan, but its exploited application is still vulnerable and its persistence checks are incomplete. What should happen before normal access returns?",
+    [
+      "Assume one scan proves that every persistence method is absent",
+      "Delete investigation records so the device appears compliant",
+      "Complete remediation and validate the endpoint under the release procedure",
+      "Release it because quarantine itself removed the vulnerability"
+    ],
+    2,
+    "Containment is not eradication. Validate remediation of the intrusion path and relevant persistence before restoring ordinary access."
+  ],
+  [
+    "mitigation-techniques",
+    "A lost laptop was powered off and protected by appropriately configured full-disk encryption. Why is that different from malware reading files in an unlocked session?",
+    [
+      "All encrypted disks automatically prevent phishing",
+      "The running authorized session may already have access to decrypted information",
+      "Disk encryption blocks every process in an unlocked session",
+      "Powered-off storage and live application access use identical trust assumptions"
+    ],
+    1,
+    "At-rest protection has a particular access model. Live code acting with available user permissions can still read data and requires additional controls."
+  ],
+  [
+    "mitigation-techniques",
+    "A department retires a web service but leaves its public endpoint and service credentials active. Which mitigation work remains?",
+    [
+      "Complete decommissioning of exposure, identities, data and asset records",
+      "Only remove its bookmark from the department page",
+      "Leave the endpoint active because no legitimate user needs it",
+      "Rotate the display logo while retaining all credentials"
+    ],
+    0,
+    "Unused but reachable systems remain attack surface. Retirement should remove or appropriately handle their access paths, credentials and information."
+  ],
+  [
+    "mitigation-techniques",
+    "A team patches a vulnerable application successfully. Which follow-up best demonstrates that the mitigation worked?",
+    [
+      "Record only that the installer started",
+      "Assume a patch name proves the correct host received it",
+      "Stop all monitoring because the vulnerability is closed",
+      "Verify the vulnerable version or behavior is addressed and required business functions still operate"
+    ],
+    3,
+    "Installation activity alone is not outcome evidence. Verify both security remediation and operational functionality after the approved change."
+  ],
+  [
+    "hardening-techniques",
+    "A hardened server image still has an unnecessary service listening on all interfaces. What is the most effective next step?",
+    [
+      "Assume the image label proves every setting is already secure",
+      "Keep the listener available for hypothetical future use",
+      "Disable the unneeded service and verify that the listening exposure is gone",
+      "Change only the service’s friendly display name"
+    ],
+    2,
+    "Reduce actual functionality and reachability that the workload does not require. Baseline labels do not replace observed configuration."
+  ],
+  [
+    "hardening-techniques",
+    "A switch uses a shared factory administrator credential across several locations. Which change best improves both security and accountability?",
+    [
+      "Only change each switch’s physical label",
+      "Remove default shared access and configure approved individually accountable administration",
+      "Keep the factory credential but hide it in a desktop note",
+      "Publish the password to make incident recovery easier"
+    ],
+    1,
+    "Default shared credentials weaken access control and attribution. Suitable unique identities and controlled management paths reduce both problems."
+  ],
+  [
+    "hardening-techniques",
+    "An endpoint baseline restricts removable media, but staff need one approved encrypted peripheral for a defined task. Which implementation is best?",
+    [
+      "Use a scoped device-control allowance for the approved need and verify enforcement",
+      "Disable every device restriction permanently for all staff",
+      "Give every employee local administrator rights to override the policy",
+      "Assume encryption alone authorizes all connected hardware"
+    ],
+    0,
+    "An explicit narrow allowance can preserve the task while controlling unnecessary peripherals. Data encryption and device authorization are separate concerns."
+  ],
+  [
+    "hardening-techniques",
+    "An old administrative protocol transmits sensitive management data without adequate transport protection. What is the best hardening direction?",
+    [
+      "Expose the old protocol publicly to reduce troubleshooting steps",
+      "Keep it unchanged because management traffic is always internal",
+      "Only lengthen the system hostname",
+      "Move to an approved secure management protocol and restrict its reachable sources"
+    ],
+    3,
+    "Protected management transport and limited reachability address distinct risks. Internal routing alone does not provide confidentiality or trustworthy administration."
+  ],
+  [
+    "hardening-techniques",
+    "A workstation meets the baseline on installation day but later accumulates unauthorized software and altered security settings. Which process addresses this gap?",
+    [
+      "Assuming hardening can never change after deployment",
+      "Disabling inventory so extra applications are not listed",
+      "Ongoing baseline comparison and remediation of configuration drift",
+      "Only retaining the original installation-success screenshot"
+    ],
+    2,
+    "Deployment is a point in time. Drift detection and controlled remediation maintain the intended state as software and settings change."
+  ],
+  [
+    "hardening-techniques",
+    "A proposed hardened setting interrupts a critical legacy workflow. Which response best balances the business requirement and the risk?",
+    [
+      "Allow staff to bypass all controls using shared administrator credentials",
+      "Assess the dependency and approve a narrow temporary exception with a migration plan",
+      "Re-enable every obsolete feature on all systems permanently",
+      "Ignore the operational failure and mark the rollout complete"
+    ],
+    1,
+    "A specific dependency should receive a specific risk decision. Broad rollback or uncontrolled bypass adds exposure well beyond the stated need."
+  ],
+  [
+    "hardening-techniques",
+    "A cloud server runs unused development tools and sample applications. Why is their removal a useful hardening step even if no compromise is known?",
+    [
+      "It reduces exposed components and the patching and configuration burden",
+      "It proves each removed program was a rootkit",
+      "It eliminates the need to patch the operating system",
+      "It guarantees future compromise is impossible"
+    ],
+    0,
+    "Attack-surface reduction is preventive maintenance. It narrows what must be defended without making claims that every removed component was malicious."
+  ],
+  [
+    "hardening-techniques",
+    "An administrator closes unnecessary ports but leaves privileged default accounts enabled. How should the result be assessed?",
+    [
+      "Port closure guarantees all administrator credentials are safe",
+      "Hardening is complete once any single setting is changed",
+      "The account issue can only be addressed by changing DNS providers",
+      "One exposure was reduced, but credential and account hardening remain necessary"
+    ],
+    3,
+    "Hardening covers services, accounts, software and access paths. Progress on one category does not automatically resolve the others."
+  ]
 ]);

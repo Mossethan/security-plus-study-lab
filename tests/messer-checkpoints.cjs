@@ -10,18 +10,18 @@ function env(saved={},blocked=false){
  return {saved,nodes,main,run:s=>vm.runInContext(s,c),complete(id){vm.runInContext(`for(const l of MESSER_LESSONS.filter(l=>l.objective==='${id}')){const p=mProgress(l);l.questions.forEach((q,i)=>p.answers[i]=q.answer);l.activity.items.forEach((q,i)=>p.matches[i]=q[1]);p.checked=true;mUpdateBest(l);}mSave();mcSync();`,c);}};
 }
 const a=env();const bank=a.run('MC_BANK'),lessons=a.run('MESSER_LESSONS');
-assert.equal(bank.length,140);assert.equal(new Set(bank.map(q=>q.id)).size,140);
+assert.equal(bank.length,196);assert.equal(new Set(bank.map(q=>q.id)).size,196);
 const oldPrompts=new Set(a.run('QUIZ_BANK').map(q=>q.prompt.trim().toLowerCase()));
-assert.equal(new Set(bank.map(q=>q.prompt.trim().toLowerCase())).size,140);
+assert.equal(new Set(bank.map(q=>q.prompt.trim().toLowerCase())).size,196);
 for(const q of bank){assert(!oldPrompts.has(q.prompt.trim().toLowerCase()),'Checkpoint prompts must be new');assert.equal(lessons.find(l=>l.id===q.lesson)?.objective,q.objective);assert.equal(q.options.length,4);assert.equal(new Set(q.options).size,4);assert(Number.isInteger(q.answer)&&q.answer>=0&&q.answer<4);assert(q.why.length>40);}
-assert.deepEqual(Array.from(a.run('MC_OBJECTIVES.map(o=>mcSize(o.id))')),[10,20,25,30,10,20,30]);
+assert.deepEqual(Array.from(a.run('MC_OBJECTIVES.map(o=>mcSize(o.id))')),[10,20,25,30,10,20,30,30,30]);
 a.run('messer()');assert(a.main.innerHTML.includes('Section checkpoints'));assert(a.main.innerHTML.includes('Locked'));assert(!a.main.innerHTML.includes('data-mc-start='));assert.equal(a.run("mcCreate('1.1')"),null);
 // A later domain does not require completing the previous domain.
 a.complete('2.1');assert(a.run("mcUnlocked('2.1')"));assert(!a.run("mcUnlocked('1.1')"));
 a.complete('1.2');assert(!a.run("mcUnlocked('1.2')"),'Earlier objectives must be completed too');
 a.complete('1.1');assert(a.run("mcUnlocked('1.1')&&mcUnlocked('1.2')"));
 a.run("mProgress(MESSER_LESSONS[0]).answers={};mcSync()");assert(a.run("mcUnlocked('1.1')"),'Retrying a lesson must not relock a checkpoint');
-for(const id of ['1.3','1.4','2.2','2.3'])a.complete(id);
+for(const id of ['1.3','1.4','2.2','2.3','2.4','2.5'])a.complete(id);
 a.run('mcRender()');assert(a.nodes.has('[data-mc-start="1.1"]'));
 a.nodes.get('[data-mc-start="1.1"]').onclick();assert.equal(a.run('location.hash'),'checkpoint-1.1');a.run("location.hash='#checkpoint-1.1';messer()");
 assert(a.main.innerHTML.includes('Question 1 of 10'));assert(!a.main.innerHTML.includes('Correct:'));
@@ -52,7 +52,7 @@ const bad=env({'security-messer-checkpoints-v1':JSON.stringify({sessions:{'1.1':
 const unavailable=env({},true);unavailable.complete('1.1');unavailable.run("mcCreate('1.1');mcRender('1.1')");assert(unavailable.nodes.get('#mc-save').textContent.includes('unavailable'));
 // Existing notes and answers are not modified by checkpoint draws or results.
 const old=a.saved['security-messer-v1'];a.run("mcRender('2.3')");assert.equal(a.saved['security-messer-v1'],old);
-console.log('PASS: 140 new questions; seven adaptive checkpoint sizes; unlock gating; permanent unlocks; full cumulative domain coverage across 84 draws; unseen priority; start/answer/navigation/submit events; reload; confidence and weak-spot resolution; idempotent scoring; immutable results; corrupt and unavailable storage; lesson progress preservation.');
+console.log('PASS: 196 new questions; nine adaptive checkpoint sizes; unlock gating; permanent unlocks; full cumulative domain coverage across 108 draws; unseen priority; start/answer/navigation/submit events; reload; confidence and weak-spot resolution; idempotent scoring; immutable results; corrupt and unavailable storage; lesson progress preservation.');
 // Boot the complete script chain in actual shell order to catch missing dependencies on other pages.
 for(const name of ['index','path','practice','exams','sandbox','guide','messer']){
  const html=fs.readFileSync(path.join(root,name+'.html'),'utf8'),nodes=new Map(),main={innerHTML:'',querySelectorAll:()=>[]};

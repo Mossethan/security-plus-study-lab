@@ -9,7 +9,7 @@ function create(saved={},unavailable=false){
  vm.createContext(context);vm.runInContext(data+'\n'+fs.readFileSync(path.join(root,'messer-checkpoint-data.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'messer-checkpoints.js'),'utf8')+'\n'+code,context);
  return {context,nodes,saved,main,run:s=>vm.runInContext(s,context)};
 }
-const app=create();assert.equal(app.run('MESSER_LESSONS.length'),38);
+const app=create();assert.equal(app.run('MESSER_LESSONS.length'),56);
 app.run('messer()');assert(app.main.innerHTML.includes('Security Controls'));
 app.run("const p=mProgress(MESSER_LESSONS[0]);mDone(MESSER_LESSONS[0]);mScore(MESSER_LESSONS[0]);");assert(app.run('p===mProgress(MESSER_LESSONS[0])'),'Render helpers must preserve event-handler state references');
 app.nodes.get('#m-notes').oninput({target:{value:'<script>study notes</script>'}});
@@ -24,7 +24,7 @@ assert(app.run('mDone(MESSER_LESSONS[0])'));assert.equal(app.run('mScore(MESSER_
 assert(app.main.innerHTML.includes('&lt;script&gt;study notes&lt;/script&gt;'));
 const reload=create(app.saved);reload.run('messer()');assert(reload.run('mDone(MESSER_LESSONS[0])'));assert(reload.run('mProgress(MESSER_LESSONS[0]).watched'));assert.equal(reload.run('mScore(MESSER_LESSONS[0])'),9);
 reload.nodes.get('#m-retry').onclick();assert(!reload.run('mDone(MESSER_LESSONS[0])'));assert.equal(reload.run('mProgress(MESSER_LESSONS[0]).best'),9);assert.equal(reload.run('mProgress(MESSER_LESSONS[0]).notes'),'<script>study notes</script>');
-for(let n=0;n<38;n++){
+for(let n=0;n<56;n++){
  reload.run(`location.hash='#'+MESSER_LESSONS[${n}].id;messer()`);
  assert(reload.main.innerHTML.includes(reload.run(`MESSER_LESSONS[${n}].title`)));
  reload.run(`MESSER_LESSONS[${n}].questions.forEach(q=>{if(q.answer<0||q.answer>=q.options.length)throw Error('Invalid answer')});`);
@@ -33,12 +33,12 @@ for(let n=0;n<38;n++){
  const f=reload.nodes.get('#m-activity');f.onsubmit({preventDefault(){},target:f});
  assert.equal(reload.run(`mScore(MESSER_LESSONS[${n}])`),reload.run(`MESSER_LESSONS[${n}].questions.length+MESSER_LESSONS[${n}].activity.items.length`));
 }
-assert.equal(reload.run('MESSER_LESSONS.filter(mDone).length'),38);
+assert.equal(reload.run('MESSER_LESSONS.filter(mDone).length'),56);
 const blocked=create({},true);blocked.run('messer()');assert(blocked.nodes.get('#messer-storage').textContent.includes('unavailable'));
 const corrupt=create({'security-messer-v1':'{'});corrupt.run('messer()');assert(corrupt.main.innerHTML.includes('Security Controls'));
-console.log('PASS: 38 lesson renders, all scoring, wrong-answer feedback, event-state identity, saved notes/answers, reload, retry, escaping, and unavailable storage.');
+console.log('PASS: 56 lesson renders, all scoring, wrong-answer feedback, event-state identity, saved notes/answers, reload, retry, escaping, and unavailable storage.');
 const lessons=app.run('MESSER_LESSONS');
-assert.equal(new Set(lessons.map(l=>l.id)).size,38,'Lesson IDs must stay unique');
+assert.equal(new Set(lessons.map(l=>l.id)).size,56,'Lesson IDs must stay unique');
 const legacy={'security-messer-v1':JSON.stringify({last:'deception-disruption',lessons:{'deception-disruption':{watched:true,notes:'Existing notes',answers:{0:1,1:0},matches:{0:0,1:1,2:2,3:3},checked:true,best:6}}})};
 const upgraded=create(legacy);upgraded.run('messer()');
 assert(upgraded.main.innerHTML.includes('Deception and Disruption'));
@@ -46,11 +46,14 @@ assert(upgraded.run('mDone(MESSER_LESSONS[7])'),'Earlier completion survives add
 assert(upgraded.main.innerHTML.includes('Next: Change Management'));
 assert.equal(upgraded.run('mProgress(MESSER_LESSONS[7]).notes'),'Existing notes');
 upgraded.run("location.hash='#certificates';messer()");
-assert(upgraded.main.innerHTML.includes('Video 18 / 38'));
+assert(upgraded.main.innerHTML.includes('Video 18 / 56'));
 assert(upgraded.main.innerHTML.includes('Next: Threat Actors'));
 upgraded.run("location.hash='#zero-day-vulnerabilities';messer()");
-assert(upgraded.main.innerHTML.includes('Video 38 / 38'));
-assert(upgraded.main.innerHTML.includes('Continue videos: An Overview of Malware'));
+assert(upgraded.main.innerHTML.includes('Video 38 / 56'));
+assert(upgraded.main.innerHTML.includes('Next: An Overview of Malware'));
+upgraded.run("location.hash='#hardening-techniques';messer()");
+assert(upgraded.main.innerHTML.includes('Video 56 / 56'));
+assert(upgraded.main.innerHTML.includes('Continue videos: Cloud Infrastructures'));
 for(const l of lessons){
  assert(/^https:\/\/www.professormesser.com\//.test(new URL(l.slug,app.run('MESSER_BASE')).href));
  for(const item of l.activity.items) assert(Number.isInteger(item[1])&&item[1]>=0&&item[1]<l.activity.labels.length);
@@ -85,6 +88,6 @@ const partial=create({'security-messer-v1':JSON.stringify({last:'non-repudiation
 assert.equal(partial.run("mProgress(MESSER_LESSONS[2]).choices[1]"),2);
 assert.equal(partial.run("mProgress(MESSER_LESSONS[2]).answers[0]"),1);
 assert(!partial.run('mDone(MESSER_LESSONS[2])'));
-assert.equal(lessons.filter(l=>l.questions.length>2).length,14);
-assert.equal(lessons.reduce((sum,l)=>sum+l.questions.length,0),140);
+assert.equal(lessons.slice(0,38).filter(l=>l.questions.length>2).length,14);
+assert.equal(lessons.reduce((sum,l)=>sum+l.questions.length,0),244);
 console.log('PASS: 14 expanded reviews, legacy score denominators, resume extra questions, partial choices, reload and retry.');

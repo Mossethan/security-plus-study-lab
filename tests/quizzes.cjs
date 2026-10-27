@@ -8,7 +8,7 @@ function env(saved={},clock=1000000,blocked=false){
  vm.createContext(c);for(const f of ['data.js','curriculum.js','messer-data.js','quiz-bank.js','quizzes.js'])vm.runInContext(fs.readFileSync(path.join(root,f),'utf8'),c,{filename:f});
  return {run:s=>vm.runInContext(s,c),saved,elements,main,setClock:v=>clock=v};
 }
-const e=env();const bank=e.run('QUIZ_BANK');assert.equal(bank.length,329);assert.equal(new Set(bank.map(q=>q.id)).size,329);assert.equal(new Set(bank.map(q=>q.prompt.trim())).size,329,'No duplicated prompts');
+const e=env();const bank=e.run('QUIZ_BANK');assert.equal(bank.length,433);assert.equal(new Set(bank.map(q=>q.id)).size,433);assert.equal(new Set(bank.map(q=>q.prompt.trim())).size,433,'No duplicated prompts');
 for(const q of bank){assert(q.domain>=0&&q.domain<5);assert(q.lesson.startsWith(String(q.domain+1)));assert(q.why||q.explanations);if(q.type==='pbq'){for(const it of q.items)assert(it[1]>=0&&it[1]<q.labels.length);}else{assert.equal(new Set(q.options).size,q.options.length);for(const a of Array.isArray(q.answer)?q.answer:[q.answer])assert(a>=0&&a<q.options.length);}}
 for(let d=0;d<5;d++){e.run(`quizCreate('quiz','${d}')`);const ids=e.run('quizState.quiz.ids');assert.equal(ids.length,10);assert.equal(new Set(ids).size,10);assert(e.run(`quizState.quiz.ids.every(id=>quizById.get(id).domain===${d})`));}
 for(let i=0;i<30;i++){e.run("quizCreate('exam')");assert(e.run("quizValid(quizState.exam,'exam')"));assert.deepEqual(Array.from(e.run('QUIZ_WEIGHTS')),Array.from(e.run('DOMAINS.map((_,d)=>quizState.exam.ids.filter(id=>quizById.get(id).domain===d).length)')));assert(e.run("quizState.exam.ids.slice(0,5).every(id=>quizById.get(id).type==='pbq')"));assert.equal(e.run('quizState.exam.deadline-quizState.exam.started'),5400000);}
@@ -26,4 +26,4 @@ e.run("quizView='review';quizRender('exam')");assert(e.main.innerHTML.includes('
 for(const mode of ['quiz','exam']){e.run(`quizHub('${mode}')`);assert(e.main.innerHTML.includes('Question bank & sources'));}
 const bad=env({'security-practice-v1':'{'});bad.run("quizHub('quiz')");assert(bad.main.innerHTML.includes('Practice questions'));
 const noStorage=env({},1000,true);noStorage.run("quizCreate('exam');quizRender('exam')");assert(noStorage.elements.get('#quiz-save').textContent.includes('Storage unavailable'));
-console.log('PASS: 329 unique items, 30 weighted 90-question draws, five domain quizzes, answer shuffling, multi-select/PBQ scoring, refresh deadline, expiry, locked answers, result rendering, submit confirmation and storage failure.');
+console.log('PASS: 433 unique items, 30 weighted 90-question draws, five domain quizzes, answer shuffling, multi-select/PBQ scoring, refresh deadline, expiry, locked answers, result rendering, submit confirmation and storage failure.');

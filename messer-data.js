@@ -310,3 +310,1907 @@ extendMesserReview('supply-chain-vulnerabilities',[
  ['A business hires an MSP that has remote administration access to its endpoints. Why does the MSP’s security posture matter?', ['The MSP removes all customer responsibility','Only the MSP’s public website can affect customers','Contract wording prevents technical compromise','Compromise of the MSP’s privileged channel could expose customer systems'],3,'An external provider’s access can become a path into the customer environment. Scope, monitor and review that access as part of supplier risk management.'],
  ['A new batch of network devices is suspected of being altered before delivery. Which supply-chain concern is most directly relevant?', ['Account lockout timing','Hardware manufacturing or distribution integrity','Output encoding in a web form','Password length on unrelated laptops'],1,'Hardware can be tampered with during manufacturing or distribution. Trusted sourcing, provenance and inspection help address that route.']
 ]);
+
+// Domain 2 continued: original reviews for videos 39–56, objectives 2.4–2.5.
+MESSER_LESSONS.push(...[
+  {
+    "id": "an-overview-of-malware",
+    "title": "An Overview of Malware",
+    "objective": "2.4",
+    "duration": "6:06",
+    "slug": "an-overview-of-malware-sy0-701/",
+    "recall": "What does the malicious software do, how did it arrive, and what evidence supports containment?",
+    "questions": [
+      {
+        "prompt": "A finance workstation begins encrypting shared documents and displays a payment demand. What is the most likely malware behavior?",
+        "options": [
+          "An application allowlist",
+          "Ransomware",
+          "A normal disk-encryption rollout",
+          "A DNS cache refresh"
+        ],
+        "answer": 1,
+        "why": "Unexpected encryption combined with an extortion demand supports ransomware. Legitimate encryption is authorized and managed; the symptoms still need investigation to establish scope."
+      },
+      {
+        "prompt": "A payroll file is stolen before ransomware encrypts the server. Which assessment best captures the impact?",
+        "options": [
+          "Both confidentiality and availability may be affected",
+          "Only availability matters because encryption occurred",
+          "Encryption proves the stolen copy is unreadable",
+          "Only the server hardware needs replacement"
+        ],
+        "answer": 0,
+        "why": "Data theft threatens confidentiality, while encryption can prevent access. Restoring files does not undo disclosure or settle the incident."
+      },
+      {
+        "prompt": "EDR identifies an active malicious process spreading from a workstation. What is the best immediate defensive action under the incident playbook?",
+        "options": [
+          "Pay the demand before assessing backups",
+          "Delete every log to prevent further execution",
+          "Wait for every employee to report symptoms",
+          "Isolate the affected endpoint while preserving evidence"
+        ],
+        "answer": 3,
+        "why": "Containment limits further communication and spread. Preserve useful evidence and follow the incident plan rather than erasing the system before assessment."
+      },
+      {
+        "prompt": "Why should a backup recovery test include checking the restore point for compromise?",
+        "options": [
+          "A successful file copy proves the attacker is gone",
+          "Restoring data automatically patches all vulnerabilities",
+          "A backup may contain malware or attacker persistence",
+          "Every backup is automatically clean once encrypted"
+        ],
+        "answer": 2,
+        "why": "Recover from a verified clean point and address the original access and persistence. A backup protects recovery capability but is not proof of a clean environment."
+      }
+    ],
+    "activity": {
+      "title": "Connect malware behavior to response",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Ransomware",
+        "Data exfiltration",
+        "Containment",
+        "Clean recovery"
+      ],
+      "items": [
+        [
+          "Unauthorized software encrypts a team share and demands payment.",
+          0,
+          "The behavior denies access to extort the organization."
+        ],
+        [
+          "A process copies customer records to an unapproved external host.",
+          1,
+          "Sensitive information is leaving the controlled environment."
+        ],
+        [
+          "The response team disconnects an affected host through EDR.",
+          2,
+          "Isolation limits further impact while investigation continues."
+        ],
+        [
+          "Validated backups are restored after the intrusion path is addressed.",
+          3,
+          "Recovery includes restoring trustworthy operation, not just readable files."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "viruses-and-worms",
+    "title": "Viruses and Worms",
+    "objective": "2.4",
+    "duration": "5:54",
+    "slug": "viruses-and-worms-sy0-701/",
+    "recall": "How do host-dependent infection, autonomous propagation and memory-based execution differ?",
+    "questions": [
+      {
+        "prompt": "An infected executable modifies other executable files when a user runs it. Which classification best fits?",
+        "options": [
+          "Network access control",
+          "A certificate revocation check",
+          "Virus",
+          "Worm requiring no host program"
+        ],
+        "answer": 2,
+        "why": "A virus attaches to a host such as an executable and runs with it. Its replication can depend on executing the infected host."
+      },
+      {
+        "prompt": "A compromised service automatically scans for vulnerable peers and infects them without another person opening a file. What is the strongest classification?",
+        "options": [
+          "A backup snapshot",
+          "Worm",
+          "A macro virus that requires an opened document",
+          "A harmless browser cookie"
+        ],
+        "answer": 1,
+        "why": "A worm can replicate and propagate autonomously. Exploiting a reachable service can allow spread without repeated user interaction."
+      },
+      {
+        "prompt": "An investigation finds malicious code running in memory through a trusted scripting interpreter, with no conventional malware executable on disk. What is the best conclusion?",
+        "options": [
+          "The behavior is consistent with a fileless attack",
+          "No malicious activity is possible without an EXE file",
+          "The interpreter is always safe because it is signed",
+          "Disk encryption prevents all memory execution"
+        ],
+        "answer": 0,
+        "why": "Fileless techniques can use memory and legitimate tools. Process behavior, scripting logs and memory evidence matter even when a standard executable is absent."
+      },
+      {
+        "prompt": "Which combination most directly limits a worm exploiting an unpatched network service?",
+        "options": [
+          "Increase the desktop wallpaper resolution",
+          "Rely only on users avoiding document macros",
+          "Disable all network logging",
+          "Patch the service and restrict unnecessary connectivity"
+        ],
+        "answer": 3,
+        "why": "Patching removes a known exploitable flaw; segmentation and filtering limit reachable targets. Awareness alone does not stop autonomous service exploitation."
+      },
+      {
+        "prompt": "A user reports that an installer was signed, but EDR observed suspicious child processes. What should the analyst do?",
+        "options": [
+          "Disable EDR because it disagreed with the signature",
+          "Treat all signed installers as worms",
+          "Investigate the behavior and validate the signer and file provenance",
+          "Assume any signed process cannot be malicious"
+        ],
+        "answer": 2,
+        "why": "A signature is one trust signal, not a guarantee of safe behavior. Stolen signing keys, malicious signed software and legitimate tools can still be involved in an attack."
+      },
+      {
+        "prompt": "A worm stops reaching other subnets after firewall changes, but the original host remains compromised. What did the firewall primarily achieve?",
+        "options": [
+          "It proved that no other hosts were infected",
+          "It reduced propagation paths without cleaning the host",
+          "It removed all persistence from the original host",
+          "It converted the worm into a virus"
+        ],
+        "answer": 1,
+        "why": "Network restrictions can contain spread. Endpoint investigation, eradication and validation are still required, including checking whether spread occurred before containment."
+      }
+    ],
+    "activity": {
+      "title": "Identify how the infection operates",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Virus",
+        "Worm",
+        "Fileless technique",
+        "Propagation control"
+      ],
+      "items": [
+        [
+          "Malicious code attaches to a program that the user executes.",
+          0,
+          "The host program carries and activates the infection."
+        ],
+        [
+          "Malware exploits peers and copies itself without new user actions.",
+          1,
+          "Autonomous propagation is characteristic of a worm."
+        ],
+        [
+          "A trusted interpreter executes malicious instructions in memory.",
+          2,
+          "The attack need not rely on a conventional executable file."
+        ],
+        [
+          "An ACL blocks an unnecessary service between workstation segments.",
+          3,
+          "Reducing reachable targets can slow or prevent further spread."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "spyware-and-bloatware",
+    "title": "Spyware and Bloatware",
+    "objective": "2.4",
+    "duration": "4:21",
+    "slug": "spyware-and-bloatware-sy0-701/",
+    "recall": "What separates covert surveillance from unwanted software that consumes resources?",
+    "questions": [
+      {
+        "prompt": "A browser extension silently collects browsing history and sends it to a third party. What behavior is most directly demonstrated?",
+        "options": [
+          "A clean backup restore",
+          "A collision-resistant hash",
+          "An authorized vulnerability assessment",
+          "Spyware"
+        ],
+        "answer": 3,
+        "why": "Covert monitoring and collection support spyware. Evaluate permissions and data flows; an extension being available in a store does not establish that its behavior is appropriate."
+      },
+      {
+        "prompt": "A new laptop includes unused trial programs that slow startup but show no evidence of covert monitoring. What is the best description?",
+        "options": [
+          "A worm because several applications are installed",
+          "Ransomware because storage is consumed",
+          "Bloatware, pending any further evidence of malicious behavior",
+          "Confirmed spyware solely because startup is slow"
+        ],
+        "answer": 2,
+        "why": "Bloatware is unnecessary or unwanted software that adds overhead. It can increase exposure, but resource use alone does not establish spying, replication or extortion."
+      },
+      {
+        "prompt": "What is the best enterprise approach to unnecessary preinstalled software?",
+        "options": [
+          "Give every user permanent administrative rights to experiment",
+          "Remove unneeded applications through an approved baseline and deployment process",
+          "Keep all bundled software because it was factory-installed",
+          "Remove the endpoint agent to free resources first"
+        ],
+        "answer": 1,
+        "why": "A supported clean baseline reduces unnecessary software, resource use and attack surface. Validate removal and dependencies rather than making uncontrolled changes."
+      },
+      {
+        "prompt": "An employee installed a free utility that requests access to all browser data. What should IT evaluate first?",
+        "options": [
+          "Whether those permissions and data collection are necessary and authorized",
+          "Whether the utility has the shortest name",
+          "Whether the download icon is attractive",
+          "Whether a low price proves it is safe"
+        ],
+        "answer": 0,
+        "why": "Compare requested access with the business purpose and privacy requirements. A free or familiar application can still request excessive access or collect sensitive data."
+      }
+    ],
+    "activity": {
+      "title": "Separate surveillance from unnecessary software",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Spyware",
+        "Bloatware",
+        "Least privilege",
+        "Standard image"
+      ],
+      "items": [
+        [
+          "An application secretly uploads a user’s browsing activity.",
+          0,
+          "The issue is unauthorized surveillance and collection."
+        ],
+        [
+          "Unused vendor utilities consume memory without serving a business purpose.",
+          1,
+          "Unnecessary software adds overhead and potentially more exposed components."
+        ],
+        [
+          "A browser extension receives only the permissions its approved job needs.",
+          2,
+          "Restricting permissions reduces what misuse can expose."
+        ],
+        [
+          "IT deploys a validated operating-system build without unnecessary trial apps.",
+          3,
+          "A consistent approved image improves control over installed software."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "other-malware-types",
+    "title": "Other Malware Types",
+    "objective": "2.4",
+    "duration": "7:32",
+    "slug": "other-malware-types-sy0-701/",
+    "recall": "Can you distinguish keylogging, conditional activation, disguised software and concealed privileged access?",
+    "questions": [
+      {
+        "prompt": "An apparently useful invoice utility secretly installs a remote-control payload. What is the most specific delivery classification?",
+        "options": [
+          "Trojan",
+          "A worm solely because it provides remote access",
+          "A security baseline",
+          "A read-only audit log"
+        ],
+        "answer": 0,
+        "why": "A Trojan masquerades as legitimate software. Remote access describes a capability; it does not by itself prove autonomous replication."
+      },
+      {
+        "prompt": "A malicious routine activates only when a particular employee account is removed. What best describes that trigger mechanism?",
+        "options": [
+          "DNSSEC validation",
+          "Load balancing",
+          "A random hash collision",
+          "Logic bomb"
+        ],
+        "answer": 3,
+        "why": "A logic bomb waits for a specified condition, such as a date or account event. The trigger distinguishes it from continuous execution."
+      },
+      {
+        "prompt": "An attacker captures everything typed into a payroll portal. Which malware capability is directly involved?",
+        "options": [
+          "Certificate stapling",
+          "VLAN tagging",
+          "Keylogging",
+          "Database sharding"
+        ],
+        "answer": 2,
+        "why": "A keylogger records keystrokes and can capture credentials or other sensitive input. It may be software or a physical device."
+      },
+      {
+        "prompt": "The operating system hides a suspicious driver and gives inconsistent process listings. Which threat should investigators consider?",
+        "options": [
+          "A benign document template by definition",
+          "A rootkit concealing privileged malicious activity",
+          "An ordinary password expiry notice",
+          "A failed SPF record"
+        ],
+        "answer": 1,
+        "why": "Rootkits can alter system behavior and conceal components. Tools running inside a compromised OS may be unreliable; trusted external investigation can be necessary."
+      },
+      {
+        "prompt": "EDR reports a cryptocurrency miner running on an application server without approval. What is the primary abuse?",
+        "options": [
+          "Unauthorized consumption of computing resources",
+          "Proof the server’s TLS certificates were revoked",
+          "Guaranteed encryption of every business file",
+          "A required operating-system update"
+        ],
+        "answer": 0,
+        "why": "Cryptomining malware uses CPU, GPU or cloud resources for someone else’s benefit. High utilization is a symptom to investigate, not proof on its own."
+      },
+      {
+        "prompt": "A workstation has a backdoor that bypasses the normal sign-in process. Which recovery goal is essential?",
+        "options": [
+          "Change only the desktop theme",
+          "Assume a reboot always removes persistent malware",
+          "Publish the backdoor credentials for troubleshooting",
+          "Remove the unauthorized access and verify it cannot re-establish persistence"
+        ],
+        "answer": 3,
+        "why": "A backdoor provides an unauthorized route into the system. Recovery must address persistence and the initial compromise, not merely stop one running process."
+      }
+    ],
+    "activity": {
+      "title": "Classify distinctive malware behavior",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Keylogger",
+        "Logic bomb",
+        "Rootkit",
+        "Trojan"
+      ],
+      "items": [
+        [
+          "A component records the characters entered at the keyboard.",
+          0,
+          "Keylogging can expose passwords and other private input."
+        ],
+        [
+          "A malicious task waits until a specific date to delete records.",
+          1,
+          "Conditional activation is the defining feature here."
+        ],
+        [
+          "A privileged component conceals malicious files from normal tools.",
+          2,
+          "Rootkits try to hide activity and maintain control."
+        ],
+        [
+          "A program advertised as a legitimate helper secretly installs malware.",
+          3,
+          "The deceptive packaging makes it a Trojan."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "physical-attacks",
+    "title": "Physical Attacks",
+    "objective": "2.4",
+    "duration": "4:04",
+    "slug": "physical-attacks-sy0-701/",
+    "recall": "How can forced access, copied credentials and environmental disruption defeat physical safeguards?",
+    "questions": [
+      {
+        "prompt": "An intruder physically breaks a locked equipment-cabinet latch. Which attack best describes the action?",
+        "options": [
+          "A cryptographic downgrade",
+          "Physical brute force",
+          "Password spraying",
+          "DNS poisoning"
+        ],
+        "answer": 1,
+        "why": "The attacker defeats a physical barrier through force. This differs from repeatedly guessing a digital secret."
+      },
+      {
+        "prompt": "An attacker copies a vulnerable employee badge’s RFID identifier and presents the copy at a reader. What is the attack?",
+        "options": [
+          "RFID cloning",
+          "Certificate renewal",
+          "Disk sanitization",
+          "Application allowlisting"
+        ],
+        "answer": 0,
+        "why": "A copied badge credential can be presented as if it were the original. Stronger credential technology and verification can reduce the risk."
+      },
+      {
+        "prompt": "Someone disables cooling to make a server room overheat. What is the primary attack category?",
+        "options": [
+          "A SQL injection against an application form",
+          "A digital-signature forgery by definition",
+          "A routine capacity-planning test",
+          "Environmental attack affecting availability"
+        ],
+        "answer": 3,
+        "why": "Environmental systems such as cooling and power support availability. Protecting only logical access leaves these physical dependencies exposed."
+      },
+      {
+        "prompt": "A facility confirms that a lost badge was copied. What is the best immediate access-control response?",
+        "options": [
+          "Assume possession of any badge proves identity",
+          "Increase the radio range of every reader",
+          "Revoke the affected credential and investigate its use",
+          "Issue an identical replacement while leaving the old identifier valid"
+        ],
+        "answer": 2,
+        "why": "Revocation stops future acceptance of the compromised identifier where supported. Audit activity and verify identity rather than preserving a known exposed credential."
+      }
+    ],
+    "activity": {
+      "title": "Match attacks and immediate physical responses",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Physical brute force",
+        "RFID cloning",
+        "Environmental attack",
+        "Credential revocation"
+      ],
+      "items": [
+        [
+          "A cabinet is pried open to reach networking equipment.",
+          0,
+          "Force defeats the physical barrier."
+        ],
+        [
+          "A duplicate contactless badge reuses another person’s identifier.",
+          1,
+          "The attacker has copied an access credential."
+        ],
+        [
+          "Cooling equipment is sabotaged to interrupt computing services.",
+          2,
+          "The attack targets the system’s operating environment."
+        ],
+        [
+          "A stolen badge is disabled in the access-control system.",
+          3,
+          "The defensive action removes that credential’s authorization."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "denial-of-service",
+    "title": "Denial of Service",
+    "objective": "2.4",
+    "duration": "6:07",
+    "slug": "denial-of-service-sy0-701/",
+    "recall": "Where is availability being exhausted, and where must mitigation happen to help?",
+    "questions": [
+      {
+        "prompt": "Thousands of compromised devices flood one public service at once. Which description fits best?",
+        "options": [
+          "A private-key signing operation",
+          "A data-classification exercise",
+          "Distributed denial of service",
+          "One authorized load-balancing cluster"
+        ],
+        "answer": 2,
+        "why": "DDoS uses multiple sources to disrupt availability. Source count helps distinguish it from a single-source attack, but both can exhaust services."
+      },
+      {
+        "prompt": "The internet link is saturated before traffic reaches the organization’s firewall. What mitigation is most useful?",
+        "options": [
+          "A new file naming convention",
+          "Upstream filtering or a provider’s DDoS scrubbing service",
+          "An ACL applied only after the already-saturated link",
+          "A longer Wi-Fi password on an unrelated office network"
+        ],
+        "answer": 1,
+        "why": "Traffic must be reduced before the constrained link. A downstream control may protect hosts but cannot recover upstream bandwidth that is already consumed."
+      },
+      {
+        "prompt": "A small forged-source request causes a much larger reply to be sent to a victim. Which two mechanisms are involved?",
+        "options": [
+          "Reflection and amplification",
+          "Encryption and tokenization",
+          "Hashing and non-repudiation",
+          "Segmentation and clean recovery"
+        ],
+        "answer": 0,
+        "why": "Reflection directs replies to the spoofed source; amplification increases response size relative to the request. They are related but distinct properties."
+      },
+      {
+        "prompt": "A public web endpoint performs an expensive report calculation for each request. An attacker exhausts CPU using a modest request rate. What is the best characterization?",
+        "options": [
+          "Only a physical cable fault can cause this pattern",
+          "A DNS registration transfer",
+          "A password-hash collision",
+          "Application-layer resource exhaustion"
+        ],
+        "answer": 3,
+        "why": "DoS can target application logic instead of just bandwidth. Rate limits, request validation and resource controls should address the expensive operation."
+      },
+      {
+        "prompt": "A change error creates a network loop and takes services offline. What should analysts conclude?",
+        "options": [
+          "The incident must be a nation-state intrusion",
+          "The loop confirms that customer data was stolen",
+          "Availability failed, but malicious intent has not been established",
+          "Every outage proves an intentional DoS attack"
+        ],
+        "answer": 2,
+        "why": "A denial of service can result from faults or mistakes as well as attacks. Establish cause from evidence instead of treating an outage as proof of an adversary."
+      },
+      {
+        "prompt": "Why is adding server capacity alone an incomplete DDoS strategy?",
+        "options": [
+          "Capacity planning makes monitoring unnecessary",
+          "The bottleneck may be bandwidth, state tables or an application dependency",
+          "More servers automatically block spoofed traffic",
+          "DDoS cannot affect cloud services"
+        ],
+        "answer": 1,
+        "why": "More compute can help only some constraints. Defense needs to consider the full path, upstream support and what resource is actually being exhausted."
+      }
+    ],
+    "activity": {
+      "title": "Identify the denial-of-service mechanism",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "DDoS",
+        "Reflection",
+        "Amplification",
+        "Application-layer DoS"
+      ],
+      "items": [
+        [
+          "Many remote devices simultaneously overwhelm a service.",
+          0,
+          "Distributed sources contribute to the disruption."
+        ],
+        [
+          "A server sends its reply to the spoofed victim address.",
+          1,
+          "The response is reflected toward the victim."
+        ],
+        [
+          "A short query produces a much larger response.",
+          2,
+          "The size difference magnifies traffic volume."
+        ],
+        [
+          "Repeated expensive searches exhaust the web application’s worker pool.",
+          3,
+          "The constrained resource is application processing capacity."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "dns-attacks",
+    "title": "DNS Attacks",
+    "objective": "2.4",
+    "duration": "8:57",
+    "slug": "dns-attacks-sy0-701/",
+    "recall": "Did the attacker corrupt a cached answer, take over domain management, or exploit a look-alike name?",
+    "questions": [
+      {
+        "prompt": "A recursive resolver caches a forged address for a legitimate domain. What attack is most directly shown?",
+        "options": [
+          "An authorized registrar renewal",
+          "A clean zone transfer",
+          "A backup rotation",
+          "DNS cache poisoning"
+        ],
+        "answer": 3,
+        "why": "The resolver stores a false answer and may supply it to later clients. Domain registration ownership need not change for cache poisoning to occur."
+      },
+      {
+        "prompt": "An attacker uses a stolen registrar account to change a company domain’s nameservers. What is the most specific classification?",
+        "options": [
+          "A normal local DNS-cache expiry",
+          "A file-integrity baseline",
+          "Domain hijacking",
+          "A browser-only display issue"
+        ],
+        "answer": 2,
+        "why": "Control of domain registration or DNS management can redirect resolution for many users. Strong registrar authentication and change controls help protect that authority."
+      },
+      {
+        "prompt": "A fraudulent site uses a misspelled version of a familiar company’s domain. Which technique is emphasized?",
+        "options": [
+          "A legitimate DNSSEC key rollover",
+          "Typosquatting",
+          "A hash collision",
+          "A network worm"
+        ],
+        "answer": 1,
+        "why": "A look-alike name exploits user mistakes or confusion. It is different from altering answers for the real company’s domain."
+      },
+      {
+        "prompt": "What does validating DNSSEC primarily add to a DNS answer?",
+        "options": [
+          "Authentication of signed DNS data and integrity checking",
+          "Confidentiality for every DNS query",
+          "A guarantee that the destination website is honest",
+          "Automatic endpoint malware removal"
+        ],
+        "answer": 0,
+        "why": "DNSSEC validates signed DNS records and their trust chain. It does not encrypt DNS traffic or certify the business intent of the website."
+      },
+      {
+        "prompt": "A workstation resolves a domain incorrectly even after switching to a known-good resolver. Its hosts file contains an unauthorized entry. What best explains the result?",
+        "options": [
+          "The registrar must have transferred the domain",
+          "All public resolvers share the same poisoned cache",
+          "DNSSEC decrypts the hosts file",
+          "Local name-resolution manipulation can override the expected lookup"
+        ],
+        "answer": 3,
+        "why": "A local hosts-file entry can affect resolution independently of the chosen DNS server. Investigate endpoint configuration as well as upstream DNS."
+      },
+      {
+        "prompt": "After a DNS redirection incident, why must investigators also assess sessions and credentials?",
+        "options": [
+          "A DNS change cannot affect confidentiality",
+          "Only DNS servers can record authentication attempts",
+          "Users may have authenticated to an attacker-controlled destination",
+          "Repairing a DNS entry revokes all stolen credentials automatically"
+        ],
+        "answer": 2,
+        "why": "Restoring correct resolution addresses routing but not any credential theft or session exposure that occurred during the redirection."
+      }
+    ],
+    "activity": {
+      "title": "Locate the manipulated naming layer",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Cache poisoning",
+        "Domain hijacking",
+        "Typosquatting",
+        "DNSSEC"
+      ],
+      "items": [
+        [
+          "A resolver stores an attacker-supplied answer for a legitimate name.",
+          0,
+          "A cached false record can misdirect later lookups."
+        ],
+        [
+          "A stolen registrar login is used to change authoritative nameservers.",
+          1,
+          "Control of domain management has been taken over."
+        ],
+        [
+          "A deceptive domain substitutes one letter in a trusted brand name.",
+          2,
+          "The attacker relies on a look-alike name."
+        ],
+        [
+          "A resolver validates a DNS record’s digital signature chain.",
+          3,
+          "Signature validation checks authenticity and integrity, not secrecy."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "wireless-attacks",
+    "title": "Wireless Attacks",
+    "objective": "2.4",
+    "duration": "7:55",
+    "slug": "wireless-attacks-sy0-701/",
+    "recall": "What distinguishes a rogue access point, an evil twin, deauthentication and radio interference?",
+    "questions": [
+      {
+        "prompt": "An employee connects an unauthorized wireless access point to the office LAN. What is it?",
+        "options": [
+          "Rogue access point",
+          "An evil twin only if it has a different SSID",
+          "An approved jump server",
+          "A cryptographic salt"
+        ],
+        "answer": 0,
+        "why": "A rogue AP is unauthorized. It need not impersonate another SSID or be installed by an external attacker to introduce risk."
+      },
+      {
+        "prompt": "An attacker broadcasts the coffee shop’s SSID and presents a fake sign-in page to nearby users. Which description is most precise?",
+        "options": [
+          "A legitimate AP solely because the SSID matches",
+          "A DNSSEC resolver",
+          "An encrypted backup",
+          "Evil twin"
+        ],
+        "answer": 3,
+        "why": "An evil twin impersonates a trusted wireless network to attract clients. A familiar network name does not prove who operates it."
+      },
+      {
+        "prompt": "Clients repeatedly receive forged disconnect management frames on a vulnerable wireless network. Which attack is indicated?",
+        "options": [
+          "A certificate revocation request",
+          "A password manager rotation",
+          "Deauthentication attack",
+          "A rootkit modifying the kernel"
+        ],
+        "answer": 2,
+        "why": "Forged deauthentication or disassociation frames can interrupt wireless sessions where protection is absent or insufficient."
+      },
+      {
+        "prompt": "Which control specifically helps defend supported Wi-Fi connections against forged deauthentication frames?",
+        "options": [
+          "Using a shorter network name",
+          "Protected Management Frames",
+          "Increasing DHCP lease duration",
+          "Disabling all certificate validation"
+        ],
+        "answer": 1,
+        "why": "PMF protects certain management frames on supported, properly configured connections. It does not eliminate RF jamming or every wireless threat."
+      },
+      {
+        "prompt": "A transmitter overwhelms the local radio channel with interference. Why may stronger Wi-Fi encryption fail to restore availability?",
+        "options": [
+          "Encryption does not stop physical-layer RF interference",
+          "Encryption increases the attacker’s legal authorization",
+          "Every RF disturbance is a DNS attack",
+          "Changing the SSID removes interference from the spectrum"
+        ],
+        "answer": 0,
+        "why": "Jamming disrupts use of the radio medium. Spectrum investigation and physical response address a different layer from protecting data contents."
+      },
+      {
+        "prompt": "A staff laptop connects to enterprise Wi-Fi but warns that the authentication server’s certificate is untrusted. What is the best action?",
+        "options": [
+          "Accept any certificate if the SSID is correct",
+          "Disable validation permanently to improve roaming",
+          "Share the account password with the access-point operator",
+          "Stop and verify the server identity and configured trust before connecting"
+        ],
+        "answer": 3,
+        "why": "Validating the authentication server helps prevent credential exposure to impersonated infrastructure. The SSID and signal strength are not sufficient proof of trust."
+      }
+    ],
+    "activity": {
+      "title": "Recognize the wireless attack from its evidence",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Rogue AP",
+        "Evil twin",
+        "Deauthentication",
+        "RF jamming"
+      ],
+      "items": [
+        [
+          "An unapproved access point is plugged into a corporate switch.",
+          0,
+          "The defining issue is unauthorized infrastructure."
+        ],
+        [
+          "A fake hotspot impersonates the organization’s network name.",
+          1,
+          "The goal is to attract users by copying a trusted network identity."
+        ],
+        [
+          "Forged disconnect frames force vulnerable clients off a network.",
+          2,
+          "The attack abuses wireless management signaling."
+        ],
+        [
+          "A transmitter floods the channel with disruptive interference.",
+          3,
+          "The attacker is denying use of the radio medium."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "on-path-attacks",
+    "title": "On-path Attacks",
+    "objective": "2.4",
+    "duration": "5:30",
+    "slug": "on-path-attacks-sy0-701/",
+    "recall": "How does an attacker positioned between communicating systems read or alter their traffic?",
+    "questions": [
+      {
+        "prompt": "A device secretly relays traffic between a user and a service, inspecting or changing it along the way. Which attack is most directly described?",
+        "options": [
+          "A scheduled vulnerability scan",
+          "On-path attack",
+          "Offline brute force against a password database",
+          "A backup-integrity check"
+        ],
+        "answer": 1,
+        "why": "An on-path attacker interposes in the communication path. Relaying can hide the interception from the endpoints if trust checks fail."
+      },
+      {
+        "prompt": "A workstation accepts a forged ARP mapping that points the default gateway’s IP address to an attacker’s MAC address. What is the immediate risk?",
+        "options": [
+          "Traffic may be redirected through the attacker on the local network",
+          "The public domain registration is automatically transferred",
+          "Every TLS private key is automatically revealed",
+          "ARP encrypts the redirected packets"
+        ],
+        "answer": 0,
+        "why": "ARP manipulation can change local forwarding. Correctly validated end-to-end encryption can still protect contents; redirecting packets alone does not reveal every key."
+      },
+      {
+        "prompt": "Which client behavior most directly undermines HTTPS protection during an on-path attack?",
+        "options": [
+          "Validating the server certificate against the intended name",
+          "Using a supported TLS version",
+          "Rejecting unexpected authentication-server certificates",
+          "Ignoring a certificate identity or trust warning"
+        ],
+        "answer": 3,
+        "why": "An attacker may present an untrusted or wrong-name certificate. Bypassing the warning removes a key check that should prevent trusting the impersonator."
+      },
+      {
+        "prompt": "A packet capture shows traffic crossing an untrusted network. Does that alone prove the attacker can read HTTPS application contents?",
+        "options": [
+          "Yes; certificate validation only changes the browser’s icon",
+          "No; encrypted packets reveal no metadata of any kind",
+          "No; properly validated TLS can keep the application contents encrypted",
+          "Yes; routing access always reveals every plaintext message"
+        ],
+        "answer": 2,
+        "why": "Being on the route can reveal metadata and enable disruption, but does not automatically defeat TLS confidentiality. Encryption does not hide every connection property."
+      }
+    ],
+    "activity": {
+      "title": "Connect interception techniques and protections",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "On-path interception",
+        "ARP poisoning",
+        "Certificate validation",
+        "End-to-end encryption"
+      ],
+      "items": [
+        [
+          "An intermediary relays a conversation while attempting to alter it.",
+          0,
+          "The attacker sits between communicating parties."
+        ],
+        [
+          "A forged local address mapping sends gateway traffic to the wrong MAC.",
+          1,
+          "ARP poisoning manipulates local link-layer resolution."
+        ],
+        [
+          "A client rejects a certificate issued for a different hostname.",
+          2,
+          "The client checks that the presented identity matches the intended service."
+        ],
+        [
+          "Only the communicating application endpoints hold the keys to readable content.",
+          3,
+          "Proper cryptographic protection can preserve confidentiality across untrusted transit."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "replay-attacks",
+    "title": "Replay Attacks",
+    "objective": "2.4",
+    "duration": "5:45",
+    "slug": "replay-attacks-sy0-701/",
+    "recall": "What stops captured authentication data from being accepted as a fresh request?",
+    "questions": [
+      {
+        "prompt": "An attacker records a valid authentication message and resends it unchanged later. What is the attack?",
+        "options": [
+          "A physical brute-force entry",
+          "A baseline configuration review",
+          "Replay",
+          "A hash collision generated from two new inputs"
+        ],
+        "answer": 2,
+        "why": "Replay reuses previously valid communication. The attacker may not need to decrypt or understand the captured message if the receiver accepts it again."
+      },
+      {
+        "prompt": "A server issues a fresh unpredictable challenge for each authentication attempt and rejects reused challenges. What security property is it strengthening?",
+        "options": [
+          "Automatic removal of rootkits",
+          "Freshness and replay resistance",
+          "Permanent secrecy of all network metadata",
+          "Guaranteed physical security"
+        ],
+        "answer": 1,
+        "why": "A one-time challenge binds the response to a particular exchange. The receiver must validate freshness and prevent reuse; merely including a number is not enough."
+      },
+      {
+        "prompt": "An attacker authenticates using a stolen password hash without first recovering the plaintext password. Which technique fits?",
+        "options": [
+          "Pass the hash",
+          "Typosquatting",
+          "DNS amplification",
+          "Authorized password reset"
+        ],
+        "answer": 0,
+        "why": "Some authentication mechanisms can accept proof based on a captured hash. Hashing passwords does not make captured credential material universally unusable."
+      },
+      {
+        "prompt": "A stolen web session cookie lets an attacker continue an authenticated session. What is the most direct risk?",
+        "options": [
+          "A guaranteed collision in the cookie’s hash",
+          "An automatic domain registration transfer",
+          "RF jamming",
+          "Session hijacking"
+        ],
+        "answer": 3,
+        "why": "A valid session token can act as a bearer credential. Protect it in transit and storage, and invalidate exposed sessions as part of response."
+      },
+      {
+        "prompt": "Why might simply encrypting a recorded message fail to prevent replay in a poorly designed protocol?",
+        "options": [
+          "Nonces are only useful for disk backups",
+          "Replay requires breaking the encryption algorithm first",
+          "The receiver may accept the same valid ciphertext more than once",
+          "Encryption always publishes the plaintext"
+        ],
+        "answer": 2,
+        "why": "Confidentiality alone does not establish freshness. Protocols need appropriate nonces, sequence checks or other validated anti-replay mechanisms."
+      },
+      {
+        "prompt": "A session token is confirmed stolen. Which action directly addresses continued use of that token?",
+        "options": [
+          "Keep the session active to avoid inconvenience",
+          "Revoke the affected session and require fresh authentication",
+          "Only rename the user’s desktop shortcut",
+          "Assume changing a password always invalidates every existing token"
+        ],
+        "answer": 1,
+        "why": "Session revocation addresses the exposed token. Password changes and session invalidation are separate operations in many systems and both may be needed."
+      }
+    ],
+    "activity": {
+      "title": "Identify what was captured and reused",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Replay",
+        "Nonce / challenge",
+        "Pass the hash",
+        "Session hijacking"
+      ],
+      "items": [
+        [
+          "A recorded valid response is sent again in a later exchange.",
+          0,
+          "Previously captured material is being reused."
+        ],
+        [
+          "A fresh unpredictable value must be answered once and cannot be reused.",
+          1,
+          "Validated one-time challenges help establish freshness."
+        ],
+        [
+          "Stolen hash material is used to authenticate without recovering a password.",
+          2,
+          "The credential representation itself supports the attack."
+        ],
+        [
+          "A captured session cookie is used to act within an existing login.",
+          3,
+          "The attacker takes over an authenticated session."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "malicious-code",
+    "title": "Malicious Code",
+    "objective": "2.4",
+    "duration": "3:40",
+    "slug": "malicious-code-sy0-701/",
+    "recall": "How can scripts and trusted interpreters become part of an attack?",
+    "questions": [
+      {
+        "prompt": "An invoice document asks a user to enable a macro that launches a shell and downloads an unknown payload. What should the user do?",
+        "options": [
+          "Enable the macro because invoices always require scripts",
+          "Allow it because a trusted shell executable is used",
+          "Forward it to all staff so they can test it",
+          "Stop and report the suspicious document through the approved process"
+        ],
+        "answer": 3,
+        "why": "The requested execution and download chain is suspicious. A legitimate interpreter can execute malicious instructions; its presence does not establish authorization."
+      },
+      {
+        "prompt": "Why do defenders monitor scripting tools that administrators also use legitimately?",
+        "options": [
+          "A trusted tool cannot write files or contact a network",
+          "Monitoring automatically grants scripts additional permissions",
+          "Attackers can misuse trusted interpreters for unauthorized actions",
+          "Every script is necessarily malware"
+        ],
+        "answer": 2,
+        "why": "Intent and behavior matter. Scripts can be useful administration tools or attack components, so assess provenance, execution context and effects."
+      },
+      {
+        "prompt": "A web page causes a browser to execute attacker-supplied JavaScript in another site’s security context. Which area should be investigated?",
+        "options": [
+          "A necessary consequence of all HTTPS sessions",
+          "Malicious script execution in the application or browser context",
+          "Only a faulty cooling fan",
+          "A planned badge renewal"
+        ],
+        "answer": 1,
+        "why": "Malicious scripts can run in browsers as well as operating-system shells. Authentication, data access and the application’s handling of untrusted content need review."
+      },
+      {
+        "prompt": "Which policy most directly reduces unnecessary script execution without banning all administration?",
+        "options": [
+          "Restrict approved execution paths and privileges, and log relevant activity",
+          "Give all scripts administrator rights",
+          "Turn off interpreter logging permanently",
+          "Trust any command pasted from a website"
+        ],
+        "answer": 0,
+        "why": "Use controlled administration and least privilege with monitoring. A blanket assumption that all scripts are safe or all scripts are forbidden misses the actual business requirement."
+      }
+    ],
+    "activity": {
+      "title": "Match code to its execution context",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Document macro",
+        "Shell script",
+        "Browser script",
+        "Execution control"
+      ],
+      "items": [
+        [
+          "An office attachment contains code that runs when macros are enabled.",
+          0,
+          "Documents can carry active content, not just static text."
+        ],
+        [
+          "A command interpreter runs a sequence of operating-system instructions.",
+          1,
+          "The instructions may be legitimate or malicious depending on their use."
+        ],
+        [
+          "JavaScript executes inside a web page’s application context.",
+          2,
+          "Browser-executed code can affect sessions and page data."
+        ],
+        [
+          "Policy restricts unapproved interpreters and unnecessary execution rights.",
+          3,
+          "Control where code runs and what it is allowed to do."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "application-attacks",
+    "title": "Application Attacks",
+    "objective": "2.4",
+    "duration": "11:48",
+    "slug": "application-attacks-sy0-701/",
+    "recall": "Which trust boundary is crossed: another user’s records, higher privilege, the file path, or executable input?",
+    "questions": [
+      {
+        "prompt": "A standard user exploits a flaw to obtain administrator permissions. What is the clearest classification?",
+        "options": [
+          "Vertical privilege escalation",
+          "Horizontal access at the same privilege level",
+          "A DNS key rollover",
+          "A read-only backup check"
+        ],
+        "answer": 0,
+        "why": "Vertical escalation moves to higher privileges. Horizontal escalation involves another user’s resources at a similar privilege level."
+      },
+      {
+        "prompt": "A user changes a record identifier and opens a colleague’s private record without gaining an administrator role. What does this most directly show?",
+        "options": [
+          "Vertical escalation must have occurred",
+          "A cryptographic collision",
+          "A radio-frequency attack",
+          "Broken object-level authorization / horizontal access"
+        ],
+        "answer": 3,
+        "why": "The server failed to enforce permission for the requested object. Hiding identifiers in the UI is insufficient; authorization must be checked for each request."
+      },
+      {
+        "prompt": "A file download endpoint accepts a path that escapes the approved directory and reads an operating-system configuration file. Which attack fits?",
+        "options": [
+          "DNS amplification",
+          "An authorized restore point",
+          "Directory traversal",
+          "Password spraying"
+        ],
+        "answer": 2,
+        "why": "Traversal manipulates path handling to reach files outside the intended location. Use safe path construction and enforce the allowed directory boundary."
+      },
+      {
+        "prompt": "A field intended as search data is interpreted as part of a database command. Which weakness is being exploited?",
+        "options": [
+          "A routine certificate renewal",
+          "Injection caused by mixing untrusted data with executable syntax",
+          "Physical tailgating",
+          "A wireless deauthentication frame"
+        ],
+        "answer": 1,
+        "why": "Injection crosses a data/code boundary. Parameterized database queries keep values separate from query structure; validation is useful but does not replace that separation."
+      },
+      {
+        "prompt": "A web application sends a location in an unvalidated input directly into an operating-system command. What is the key risk?",
+        "options": [
+          "Command injection in the server’s execution context",
+          "A guarantee that only the browser can be affected",
+          "A necessary DNSSEC operation",
+          "An automatic downgrade of the Wi-Fi cipher"
+        ],
+        "answer": 0,
+        "why": "Untrusted data can alter a command if it is treated as executable syntax. Avoid unnecessary shell execution, use safe APIs and constrain privileges."
+      },
+      {
+        "prompt": "A trusted application loads a malicious library from an attacker-writable location before its legitimate library. Which technique is illustrated?",
+        "options": [
+          "Credential revocation",
+          "Disk mirroring",
+          "An authorized password lockout",
+          "DLL side-loading / search-order hijacking"
+        ],
+        "answer": 3,
+        "why": "Unsafe library loading can let malicious code run inside a trusted process. Control search paths, permissions and approved components."
+      },
+      {
+        "prompt": "An attacker resends a captured authenticated API operation and the server performs the same sensitive action again. What design gap is emphasized?",
+        "options": [
+          "Only a longer user password is needed",
+          "The API must be using a worm",
+          "Missing replay resistance or operation freshness checks",
+          "Insufficient camera coverage at the data center"
+        ],
+        "answer": 2,
+        "why": "Sensitive operations may need unique request identifiers, appropriate anti-replay checks and business validation. A previously valid request is not always safe to repeat."
+      },
+      {
+        "prompt": "Which defense best addresses a user requesting another customer’s document by guessing its ID?",
+        "options": [
+          "Trust an owner ID supplied by the browser",
+          "Check the authenticated user’s permission for that document on the server",
+          "Use longer document IDs as the only protection",
+          "Remove the document link from the menu only"
+        ],
+        "answer": 1,
+        "why": "Object-level authorization belongs at the server. Unpredictable IDs can reduce guessing but do not establish permission, and client-controlled owner claims are untrusted."
+      }
+    ],
+    "activity": {
+      "title": "Find the violated application boundary",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Vertical escalation",
+        "Horizontal escalation",
+        "Directory traversal",
+        "Injection"
+      ],
+      "items": [
+        [
+          "A regular account gains the ability to perform administrator-only actions.",
+          0,
+          "The account crossed to a higher privilege level."
+        ],
+        [
+          "One customer reads a different customer’s records at the same role level.",
+          1,
+          "The missing check is access to another user’s objects."
+        ],
+        [
+          "A manipulated path reaches files above the permitted download directory.",
+          2,
+          "The attacker crosses a filesystem path boundary."
+        ],
+        [
+          "Input meant as data changes the structure of a backend command.",
+          3,
+          "The application treated untrusted data as executable syntax."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "cryptographic-attacks",
+    "title": "Cryptographic Attacks",
+    "objective": "2.4",
+    "duration": "9:31",
+    "slug": "cryptographic-attacks-sy0-701/",
+    "recall": "Is the attacker forcing weaker protection, removing it, or exploiting a hash property?",
+    "questions": [
+      {
+        "prompt": "An attacker forces two systems to negotiate an obsolete, weaker protocol that both still support. Which attack is emphasized?",
+        "options": [
+          "A safe key escrow procedure",
+          "Downgrade attack",
+          "A successful secure upgrade",
+          "A physical badge clone"
+        ],
+        "answer": 1,
+        "why": "A downgrade pushes communication toward weaker supported protection. Disable obsolete options and enforce acceptable protocol and cipher requirements."
+      },
+      {
+        "prompt": "An intermediary keeps a victim using HTTP while it uses HTTPS toward the real service. Which technique fits?",
+        "options": [
+          "SSL stripping",
+          "DNSSEC signing",
+          "Disk encryption",
+          "Certificate stapling"
+        ],
+        "answer": 0,
+        "why": "Stripping removes HTTPS protection from the victim-facing leg. Secure HTTPS-only design and HSTS can help address this class of attack."
+      },
+      {
+        "prompt": "Two different files produce the same digest under a hash algorithm. What has occurred?",
+        "options": [
+          "A private key was necessarily recovered",
+          "The files must be identical",
+          "The hash has encrypted both files",
+          "A hash collision"
+        ],
+        "answer": 3,
+        "why": "A collision means distinct inputs share a hash output. It does not mean the files are identical or that hashing encrypted them."
+      },
+      {
+        "prompt": "What distinguishes a birthday attack against a hash from finding a preimage for one specified digest?",
+        "options": [
+          "A birthday attack only concerns calendar software",
+          "A preimage attack always changes DNS registration",
+          "The birthday attack seeks any colliding pair rather than one chosen digest’s input",
+          "Both require recovering a TLS private key first"
+        ],
+        "answer": 2,
+        "why": "The birthday effect makes finding any collision a different problem from finding an input for a particular target digest. Strong algorithms and suitable output lengths matter."
+      },
+      {
+        "prompt": "A server supports an old protocol only for a rarely used legacy client. Why is that still a concern?",
+        "options": [
+          "Changing the certificate logo removes the risk",
+          "The weaker option may remain an available downgrade path",
+          "Rare use makes protocol flaws impossible to exploit",
+          "The legacy setting strengthens every modern connection"
+        ],
+        "answer": 1,
+        "why": "Supported fallback options remain part of the attack surface. Plan compatible modernization or isolation instead of assuming rarity eliminates exposure."
+      },
+      {
+        "prompt": "A valid HTTPS connection ends at a malicious site with its own legitimate certificate. What does the certificate establish?",
+        "options": [
+          "The connection is protected to that domain; it does not guarantee honest content",
+          "Every offer on the website is legitimate",
+          "The site cannot host malware",
+          "The operator has passed a universal criminal-background check"
+        ],
+        "answer": 0,
+        "why": "TLS authenticates the certificate’s domain identity under its trust model and protects transport. A malicious operator can also obtain a certificate for a domain it controls."
+      }
+    ],
+    "activity": {
+      "title": "Distinguish attacks on transport and hashes",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Downgrade",
+        "SSL stripping",
+        "Hash collision",
+        "Birthday attack"
+      ],
+      "items": [
+        [
+          "A connection is pushed onto a weaker supported protocol version.",
+          0,
+          "The negotiation ends with less secure protection."
+        ],
+        [
+          "HTTPS is removed from the victim-facing part of a relayed connection.",
+          1,
+          "The client loses the expected transport protection."
+        ],
+        [
+          "Different messages produce the same message digest.",
+          2,
+          "Distinct inputs have the same hash output."
+        ],
+        [
+          "An attacker searches many candidates for any two matching digests.",
+          3,
+          "The target is a colliding pair rather than a specified digest’s preimage."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "password-attacks",
+    "title": "Password Attacks",
+    "objective": "2.4",
+    "duration": "7:15",
+    "slug": "password-attacks-sy0-701/",
+    "recall": "How do spraying, exhaustive guessing, reused breached credentials and offline cracking differ?",
+    "questions": [
+      {
+        "prompt": "A source tries one common password against hundreds of different accounts. Which attack is most specific?",
+        "options": [
+          "Directory traversal",
+          "A DNS zone transfer",
+          "Password spraying",
+          "A single-account exhaustive brute force"
+        ],
+        "answer": 2,
+        "why": "Spraying distributes a small password set across many accounts, often to avoid per-account thresholds. Cross-account monitoring can still detect it."
+      },
+      {
+        "prompt": "An attacker tests many different password candidates against one account. Which attack pattern is emphasized?",
+        "options": [
+          "A collision-resistant digital signature",
+          "Brute-force guessing",
+          "Credential stuffing only because there are many guesses",
+          "RFID cloning"
+        ],
+        "answer": 1,
+        "why": "Brute force or candidate guessing focuses on finding a valid password. The pattern differs from a small shared set used across many accounts."
+      },
+      {
+        "prompt": "An attacker tries username-and-password pairs stolen from a different website against the company portal. What is this?",
+        "options": [
+          "Credential stuffing",
+          "Password spraying with one shared candidate",
+          "A fileless worm by definition",
+          "Certificate revocation"
+        ],
+        "answer": 0,
+        "why": "Credential stuffing exploits password reuse using already exposed credential pairs. Unique passwords and strong MFA reduce the chance those pairs are enough."
+      },
+      {
+        "prompt": "Why do account lockout rules fail to stop guessing against a stolen hash database offline?",
+        "options": [
+          "All hash functions reveal plaintext immediately",
+          "Offline guessing requires each account to approve it",
+          "The database’s filename disables lockout",
+          "The guesses are checked outside the live sign-in service"
+        ],
+        "answer": 3,
+        "why": "Online rate limits and lockouts only govern requests reaching that service. Offline resistance depends on password strength and appropriate salted, costly password hashing."
+      },
+      {
+        "prompt": "Two users with the same password have different stored password-hash values because each has a unique random salt. What does salting primarily achieve?",
+        "options": [
+          "It encrypts every authentication session",
+          "It prevents all online spraying without other controls",
+          "It limits reuse of precomputed work and identical-hash comparisons across users",
+          "It makes weak passwords impossible to guess"
+        ],
+        "answer": 2,
+        "why": "Unique salts make attackers do per-salt work and prevent simple same-password hash equality. A salt is not secret and does not replace strong passwords or a suitable password-hashing algorithm."
+      },
+      {
+        "prompt": "Which monitoring approach best detects a low-and-slow password spray?",
+        "options": [
+          "Treat one successful MFA event as proof all failures are harmless",
+          "Correlate failures across many accounts and time windows",
+          "Inspect only accounts that have already locked out",
+          "Disable collection of failed sign-in events"
+        ],
+        "answer": 1,
+        "why": "An attack can stay below each account’s threshold while creating a broader pattern. Look across users, sources and time, then investigate successful access as well."
+      }
+    ],
+    "activity": {
+      "title": "Classify the credential-attack pattern",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Password spraying",
+        "Brute force",
+        "Credential stuffing",
+        "Offline cracking"
+      ],
+      "items": [
+        [
+          "A few common passwords are tested across many usernames.",
+          0,
+          "The pattern spreads attempts across accounts."
+        ],
+        [
+          "Numerous candidates are tried against one target account.",
+          1,
+          "The attacker searches for the correct secret."
+        ],
+        [
+          "Previously breached credential pairs are reused on a different service.",
+          2,
+          "Password reuse is what makes the stolen pairs valuable."
+        ],
+        [
+          "Captured password hashes are tested locally without contacting the login server.",
+          3,
+          "Live-service lockout limits do not control local computations."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "indicators-of-compromise",
+    "title": "Indicators of Compromise",
+    "objective": "2.4",
+    "duration": "10:59",
+    "slug": "indicators-of-compromise-sy0-701/",
+    "recall": "Which observations warrant investigation, and what evidence would confirm or weaken the hypothesis?",
+    "questions": [
+      {
+        "prompt": "A user shows successful sign-ins from distant countries eight minutes apart. What is the best first interpretation?",
+        "options": [
+          "Definitive proof of a named attacker",
+          "Proof MFA was disabled",
+          "Always harmless because both sign-ins succeeded",
+          "Suspicious impossible-travel evidence that needs context such as VPN use"
+        ],
+        "answer": 3,
+        "why": "Geolocation and travel timing are useful signals, but VPNs, proxies and inaccurate location data can affect them. Correlate device, session and user context."
+      },
+      {
+        "prompt": "A file-integrity monitor flags a changed system binary outside any approved change window. What should the analyst do?",
+        "options": [
+          "Assume every changed hash is malicious without review",
+          "Overwrite all logs before examining the binary",
+          "Validate the change against trusted evidence and investigate unauthorized modification",
+          "Ignore it because the system still boots"
+        ],
+        "answer": 2,
+        "why": "The changed hash shows a modification. Authorization, software updates, provenance and endpoint evidence determine whether it is expected or suspicious."
+      },
+      {
+        "prompt": "A workstation sends unusually large outbound transfers to a new external destination after office hours. Which hypothesis deserves investigation?",
+        "options": [
+          "A physical badge-cloning event",
+          "Possible data exfiltration",
+          "Guaranteed proof of a DNSSEC failure",
+          "A normal backup solely because it is after hours"
+        ],
+        "answer": 1,
+        "why": "Volume, timing and destination are suspicious in context. Check process, user, authorized jobs and data involved; network volume alone does not prove theft."
+      },
+      {
+        "prompt": "CPU use rises to 100% during an approved analytics job. How should this affect the incident assessment?",
+        "options": [
+          "The authorized workload is a plausible benign explanation to verify",
+          "High CPU always proves cryptomining malware",
+          "All monitoring should be disabled",
+          "An account must have been stolen"
+        ],
+        "answer": 0,
+        "why": "A deviation needs context. Correlating with a known workload can reduce suspicion, while unexpected behavior or persistence can still warrant investigation."
+      },
+      {
+        "prompt": "A terminated employee’s account becomes active again without an approved request. What is the best response?",
+        "options": [
+          "Assume all account reactivations are routine",
+          "Delete the audit trail so the user cannot see it",
+          "Grant a new administrator role to test the account",
+          "Investigate the reactivation and restrict access under the response procedure"
+        ],
+        "answer": 3,
+        "why": "Unexpected access changes can signal misuse or process failure. Preserve account-change and sign-in evidence while addressing the access risk."
+      },
+      {
+        "prompt": "Several security logs have unexplained gaps while a high-privilege session was active. What concern should be investigated?",
+        "options": [
+          "An automatic improvement in confidentiality",
+          "A requirement to discard all remaining logs",
+          "Possible log tampering or loss of visibility",
+          "Proof that no suspicious actions occurred"
+        ],
+        "answer": 2,
+        "why": "Missing logs can arise from faults or deliberate interference. Correlate collector health, configuration changes and independent sources rather than treating silence as proof of safety."
+      },
+      {
+        "prompt": "Repeated account lockouts occur even though the user denies attempting to sign in. Which next step is most useful?",
+        "options": [
+          "Declare successful compromise from failures alone",
+          "Correlate authentication sources and check for attack or stale stored credentials",
+          "Assume the user is lying",
+          "Permanently disable all lockout policies"
+        ],
+        "answer": 1,
+        "why": "Failed authentication may reflect attacks or a service using an old password. Source, timing and success events help distinguish the possibilities."
+      },
+      {
+        "prompt": "An EDR alert, an unusual child process and a new outbound connection share a timestamp. Why is this stronger than considering any one signal alone?",
+        "options": [
+          "Correlated independent evidence supports a more specific incident hypothesis",
+          "Three alerts mathematically guarantee malicious intent",
+          "All correlations identify the attacker’s nationality",
+          "Multiple logs eliminate the need for preservation"
+        ],
+        "answer": 0,
+        "why": "Related endpoint and network evidence can strengthen or challenge an interpretation. Correlation improves investigation but does not replace validation or establish attribution by itself."
+      }
+    ],
+    "activity": {
+      "title": "Connect signals with investigative hypotheses",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Impossible travel",
+        "File-integrity change",
+        "Possible exfiltration",
+        "Potential log tampering"
+      ],
+      "items": [
+        [
+          "One account signs in from far-apart regions within an implausible travel interval.",
+          0,
+          "Check VPN, device and session context before concluding compromise."
+        ],
+        [
+          "A protected binary’s hash differs from its trusted baseline.",
+          1,
+          "Identify what changed and whether it was authorized."
+        ],
+        [
+          "Sensitive-file access is followed by a large unexplained external upload.",
+          2,
+          "Correlate data access, process activity and transfer evidence."
+        ],
+        [
+          "Audit records disappear during a privileged session without an approved reason.",
+          3,
+          "Investigate both collection failures and intentional interference."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "segmentation-and-access-control",
+    "title": "Segmentation and Access Control",
+    "objective": "2.5",
+    "duration": "6:06",
+    "slug": "segmentation-and-access-control-sy0-701/",
+    "recall": "How do network boundaries, traffic rules and execution rules limit an attacker’s options?",
+    "questions": [
+      {
+        "prompt": "Guest Wi-Fi must reach the internet but never internal file shares. Which design best enforces this?",
+        "options": [
+          "Separate the guest segment and enforce explicit traffic restrictions at its boundary",
+          "Use a different SSID while bridging guests into the same unrestricted LAN",
+          "Hide the file-server icon only",
+          "Rely only on a sign asking guests not to connect"
+        ],
+        "answer": 0,
+        "why": "Segmentation creates a boundary; ACLs or firewall rules enforce permitted flows. A different name alone does not establish isolation."
+      },
+      {
+        "prompt": "Why does placing systems in different VLANs not by itself guarantee they cannot communicate?",
+        "options": [
+          "VLANs always disable all routing automatically",
+          "Every VLAN uses the same administrator password",
+          "VLAN tags encrypt application contents",
+          "Inter-VLAN routing may still permit traffic unless policy restricts it"
+        ],
+        "answer": 3,
+        "why": "VLANs separate broadcast domains, but routing can connect them. Enforce and test allowed communication at the relevant boundary."
+      },
+      {
+        "prompt": "A server should accept database traffic only from the application tier. Which ACL is most appropriate?",
+        "options": [
+          "Allow every port from the entire internet",
+          "Block logging while leaving all traffic allowed",
+          "Allow the required application sources and port, then deny other unnecessary access",
+          "Allow all internal addresses because they are trusted"
+        ],
+        "answer": 2,
+        "why": "Define source, destination and required service according to the business flow. Internal location alone is not sufficient authorization."
+      },
+      {
+        "prompt": "Only vetted applications may execute on a kiosk. Which policy directly matches this requirement?",
+        "options": [
+          "A warning on the desktop without enforcement",
+          "Application allowlisting",
+          "A denylist containing only one known malware filename",
+          "A longer DHCP lease"
+        ],
+        "answer": 1,
+        "why": "An allowlist permits approved software and rejects unapproved execution according to policy. A limited denylist cannot enforce an approved-only requirement."
+      },
+      {
+        "prompt": "What is a limitation of blocking malicious software only by filename?",
+        "options": [
+          "An attacker can rename it, so stronger identity and behavior controls are needed",
+          "A filename uniquely proves publisher authenticity",
+          "Renaming always removes malicious code",
+          "The policy becomes a digital signature automatically"
+        ],
+        "answer": 0,
+        "why": "Filenames are weak identifiers. Appropriate publisher, hash, path and behavioral controls offer different tradeoffs and need sound configuration."
+      },
+      {
+        "prompt": "A segmented design is deployed. Which validation is most useful?",
+        "options": [
+          "Test only whether internet browsing works",
+          "Assume the diagram proves enforcement",
+          "Temporarily allow all traffic and leave that rule in place",
+          "Test both required business flows and prohibited cross-segment flows"
+        ],
+        "answer": 3,
+        "why": "A useful policy must permit intended work and block unwanted access. Testing both positive and negative cases catches overly broad or disruptive rules."
+      }
+    ],
+    "activity": {
+      "title": "Match each boundary to its enforcement mechanism",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Segmentation",
+        "Network ACL",
+        "Application allowlist",
+        "Application denylist"
+      ],
+      "items": [
+        [
+          "Guest devices and finance servers are placed behind separate enforced boundaries.",
+          0,
+          "Segmentation limits paths between trust zones."
+        ],
+        [
+          "A rule permits TCP 443 from an approved source range to one service.",
+          1,
+          "The rule controls a specified network flow."
+        ],
+        [
+          "A kiosk runs only approved signed applications.",
+          2,
+          "Approved-only execution is an allowlist approach."
+        ],
+        [
+          "A policy blocks a set of identified prohibited executables.",
+          3,
+          "A denylist identifies what must not execute."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mitigation-techniques",
+    "title": "Mitigation Techniques",
+    "objective": "2.5",
+    "duration": "6:51",
+    "slug": "mitigation-techniques-sy0-701/",
+    "recall": "Which safeguard addresses the immediate risk, and what additional work remains?",
+    "questions": [
+      {
+        "prompt": "A service has a known remotely exploitable flaw and a tested vendor fix is available. Which action most directly addresses the flaw?",
+        "options": [
+          "Assume disk encryption fixes the exposed service",
+          "Apply the approved patch and validate the service",
+          "Only change the desktop background",
+          "Add the vulnerability to a spreadsheet without action"
+        ],
+        "answer": 1,
+        "why": "Patching addresses the vulnerable code. Follow change control and validate operation; unrelated controls may reduce other risks but do not repair that flaw."
+      },
+      {
+        "prompt": "A business-critical legacy system cannot be patched immediately. What is the best interim approach?",
+        "options": [
+          "Apply approved compensating restrictions and monitoring with a time-bound remediation plan",
+          "Treat the exception as permanent and remove monitoring",
+          "Expose it publicly to simplify support",
+          "Assume risk disappears if the software is old"
+        ],
+        "answer": 0,
+        "why": "Compensating controls reduce exposure while remediation is planned. Document the owner, residual risk and review date rather than silently accepting an indefinite exception."
+      },
+      {
+        "prompt": "A technician needs temporary elevated access for one approved maintenance task. What best reflects least privilege?",
+        "options": [
+          "Add the technician to every privileged group permanently",
+          "Use a shared administrator account for all staff",
+          "Disable authorization checks during business hours",
+          "Grant scoped, time-limited access and remove it when the task ends"
+        ],
+        "answer": 3,
+        "why": "Limit both what access permits and how long it lasts. Broad persistent privileges increase the impact of mistakes and compromised accounts."
+      },
+      {
+        "prompt": "An infected laptop is quarantined from normal network access. What does quarantine accomplish?",
+        "options": [
+          "It guarantees no prior data theft occurred",
+          "It automatically patches all disconnected machines",
+          "It limits exposure while investigation and remediation continue",
+          "It proves the operating system is clean"
+        ],
+        "answer": 2,
+        "why": "Quarantine is containment. Verify remediation and health before restoring access; isolation alone is not eradication or proof that earlier damage did not occur."
+      },
+      {
+        "prompt": "Why can endpoint encryption help a lost powered-off laptop but not reliably stop malware running in an unlocked user session?",
+        "options": [
+          "The laptop’s storage stops existing when unlocked",
+          "The authorized running system may already have access to decrypted data",
+          "Encryption always prevents application execution",
+          "All endpoint encryption keys are public"
+        ],
+        "answer": 1,
+        "why": "Encryption at rest protects stored data under its access model. Running code with authorized access may still read available plaintext, so endpoint and access controls remain necessary."
+      },
+      {
+        "prompt": "A retired server is no longer needed. Which action best reduces its remaining attack surface?",
+        "options": [
+          "Decommission it through approved data, identity and asset-retirement procedures",
+          "Leave it powered on with default accounts",
+          "Only hide its shortcut from the service desk",
+          "Keep all old credentials enabled indefinitely"
+        ],
+        "answer": 0,
+        "why": "Retirement should address data disposition, network exposure, credentials and inventory. An unused but reachable system can still be exploited."
+      }
+    ],
+    "activity": {
+      "title": "Choose a mitigation for the specific exposure",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Patching",
+        "Least privilege",
+        "Quarantine",
+        "Decommissioning"
+      ],
+      "items": [
+        [
+          "An approved vendor fix is installed to remove a known vulnerability.",
+          0,
+          "The affected code is updated and then validated."
+        ],
+        [
+          "A support role receives only the permissions needed for its task.",
+          1,
+          "Access is constrained to its actual business purpose."
+        ],
+        [
+          "A suspicious endpoint is restricted to remediation resources.",
+          2,
+          "Containment limits its normal access until it is safe to return."
+        ],
+        [
+          "An obsolete service is retired, with data and credentials handled appropriately.",
+          3,
+          "Removing the unused resource reduces lingering exposure."
+        ]
+      ]
+    }
+  },
+  {
+    "id": "hardening-techniques",
+    "title": "Hardening Techniques",
+    "objective": "2.5",
+    "duration": "12:11",
+    "slug": "hardening-techniques-sy0-701/",
+    "recall": "How do you reduce unnecessary services, identities, interfaces and software while preserving required work?",
+    "questions": [
+      {
+        "prompt": "A server exposes an unused remote-management service to the internet. Which hardening step most directly removes that exposure?",
+        "options": [
+          "Keep it open but publish a warning",
+          "Disable auditing on the service",
+          "Disable the unused service and close its unnecessary network path",
+          "Rename the service shortcut only"
+        ],
+        "answer": 2,
+        "why": "Remove unneeded functionality and restrict access. A visible warning or renamed shortcut does not reduce reachability or stop the listening service."
+      },
+      {
+        "prompt": "A network appliance still uses the vendor’s default administrator password. What should happen?",
+        "options": [
+          "Only change its display name",
+          "Replace default credentials and use individually accountable administration where supported",
+          "Keep the default because support technicians know it",
+          "Post the default password beside the appliance"
+        ],
+        "answer": 1,
+        "why": "Default credentials are widely known or discoverable. Appropriate unique credentials and accountable identities reduce unauthorized access and improve investigation."
+      },
+      {
+        "prompt": "After imaging, a laptop contains an unused local administrator account and unnecessary software. What is the best next action?",
+        "options": [
+          "Apply and verify the approved hardened baseline",
+          "Assume the image is secure because installation succeeded",
+          "Give all users administrator rights",
+          "Disable updates permanently to preserve the image"
+        ],
+        "answer": 0,
+        "why": "Hardening includes accounts, software, services and configuration. A successful installation does not establish that the device meets its security baseline."
+      },
+      {
+        "prompt": "Which control most directly reduces unauthorized external peripheral use on a managed endpoint?",
+        "options": [
+          "A larger monitor",
+          "A longer browser history retention period",
+          "An open local administrator account",
+          "An enforced device-control policy allowing only approved peripherals as needed"
+        ],
+        "answer": 3,
+        "why": "Port and device controls can limit connected hardware according to business need. They should be tested so required devices continue to work."
+      },
+      {
+        "prompt": "Why should unnecessary software be removed from production systems?",
+        "options": [
+          "Removal eliminates the need to secure remaining applications",
+          "An installed application can never introduce a vulnerability",
+          "It adds components that must be patched, configured and defended",
+          "Every unused application is already proven malware"
+        ],
+        "answer": 2,
+        "why": "More components can increase attack surface and maintenance burden. Removing what is not needed reduces exposure without proving every removed item was malicious."
+      },
+      {
+        "prompt": "A hardened baseline disables an old protocol that a critical application still requires. What is the best response?",
+        "options": [
+          "Re-enable every legacy protocol on every device",
+          "Assess the dependency and approve a scoped mitigation or migration plan",
+          "Disable all hardening permanently for the entire organization",
+          "Ignore the outage because security settings are always harmless"
+        ],
+        "answer": 1,
+        "why": "Hardening must account for business dependencies. Resolve the specific risk with controlled exceptions and a modernization plan rather than broad unmanaged rollback."
+      },
+      {
+        "prompt": "Which approach best protects administrative access to a switch?",
+        "options": [
+          "Restrict management to approved secure paths, use strong authentication and keep it patched",
+          "Expose its management interface publicly for convenience",
+          "Use plaintext remote administration because the network is internal",
+          "Share one default password across every device"
+        ],
+        "answer": 0,
+        "why": "Secure management combines limited reachability, protected protocols, appropriate authentication and maintenance. No single change substitutes for all of them."
+      },
+      {
+        "prompt": "An auditor wants evidence that hardening remains effective after deployment. What best meets the request?",
+        "options": [
+          "Show only the original installation-success screen",
+          "Assume security settings never change",
+          "Remove monitoring so unexpected differences cannot appear",
+          "Compare current settings with the baseline and investigate configuration drift"
+        ],
+        "answer": 3,
+        "why": "Hardening is maintained over time. Baseline comparison and drift review can reveal later changes, missed devices or unauthorized configuration."
+      }
+    ],
+    "activity": {
+      "title": "Map hardening actions to the risk they reduce",
+      "instruction": "Match each situation to the most specific concept. Labels may be reused.",
+      "labels": [
+        "Service minimization",
+        "Credential hardening",
+        "Device control",
+        "Configuration drift review"
+      ],
+      "items": [
+        [
+          "Unneeded listeners and network-facing features are disabled.",
+          0,
+          "Removing unnecessary services reduces available attack paths."
+        ],
+        [
+          "Default passwords and unnecessary privileged accounts are addressed.",
+          1,
+          "Harden the identities that control the system."
+        ],
+        [
+          "Only approved removable peripherals may be used under policy.",
+          2,
+          "Control physical connection capabilities according to need."
+        ],
+        [
+          "Live settings are compared with the approved secure baseline.",
+          3,
+          "Detect and address deviations introduced after deployment."
+        ]
+      ]
+    }
+  }
+]);
