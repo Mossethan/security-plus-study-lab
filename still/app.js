@@ -62,6 +62,9 @@ function renderTimer(){
  const seconds=unlimited?Math.floor(ms/1000):Math.ceil(ms/1000);
  $('timer').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
  $('timerState').textContent=session.status==='complete'?'SESSION COMPLETE':`${unlimited?'OPEN ENDED':settings.timerMode==='single'?'SINGLE SESSION':snap.phase.toUpperCase()+' · ROUND '+snap.cycle}${session.status==='paused'?' · PAUSED':''}`;
+ const cycleText=`${snap.completedCycles} ${snap.completedCycles===1?'cycle':'cycles'} completed`;
+ $('cycleCount').hidden=unlimited||settings.timerMode!=='pomodoro';
+ if($('cycleCount').textContent!==cycleText)$('cycleCount').textContent=cycleText;
  $('progress').style.width=(snap.durationMs?Math.min(100,snap.elapsedMs/snap.durationMs*100):0)+'%';
  $('sessionTitle').textContent=snap.phase==='break'?'A moment to recharge':settings.timerMode==='pomodoro'?'Pomodoro timer':'Focus timer';
  $('sessionPanel').setAttribute('aria-label',settings.timerMode==='pomodoro'?'Pomodoro timer':'Focus timer');

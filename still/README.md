@@ -8,7 +8,7 @@ A personal sound player for studying and working. Buildless HTML, CSS and JavaSc
 - Adjustable amplitude modulation: 0–50% depth, 8/12/16/20 Hz rate.
 - Local audio-file playback through the same music/pulse mixer, with looping.
 - Switch between a single focus session (audio stops at the end) and repeating Pomodoro cycles: 25/5, 50/10, and 90/15 minutes, plus unlimited sessions. Audio fades out for breaks and resumes for focus.
-- Sticky timer controls with pause/resume, reset, skip break, and round count. Wall-clock timing catches up after background throttling.
+- Sticky timer controls with pause/resume, reset, skip break, current round, and completed-cycle count. A Pomodoro cycle is counted only after both focus and its full break finish; skipped breaks do not count. The count covers the current timer run and resets when the timer is reset, the duration or mode changes, or the page reloads. Wall-clock timing catches up after background throttling.
 - Timer mode, settings, and a bounded completed-focus-round log in browser local storage.
 
 Audio starts after a user gesture. Keep the page open while listening; mobile operating systems may suspend browser audio when locked. Imported files stay in memory on the device and must be chosen again after a reload. Settings and history do not sync between browsers.

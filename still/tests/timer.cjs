@@ -6,6 +6,21 @@ for(const [focus,rest] of [[25,5],[50,10],[90,15]]){
  equal(s.snapshot(focus*60000-1).phase,'focus');equal(s.snapshot(focus*60000).phase,'break');
  equal(s.snapshot(focus*60000).remainingMs,rest*60000);equal(s.snapshot((focus+rest)*60000).phase,'focus');
  equal(s.snapshot((focus+rest)*60000).cycle,2);equal(s.snapshot((focus+rest)*60000).completedFocus,1);
+ equal(s.snapshot(0).completedCycles,0);equal(s.snapshot(focus*60000).completedCycles,0);
+ equal(s.snapshot((focus+rest)*60000-1).completedCycles,0);equal(s.snapshot((focus+rest)*60000).completedCycles,1);
+ equal(s.snapshot(2*(focus+rest)*60000).completedCycles,2);
+}
+{
+ const s=new PomodoroSession();s.start(0);s.pause(27*60000);
+ equal(s.snapshot(50*60000).completedCycles,0);s.start(50*60000);
+ equal(s.snapshot(53*60000-1).completedCycles,0);equal(s.snapshot(53*60000).completedCycles,1);
+ const skipped=new PomodoroSession();skipped.start(0);skipped.skipBreak(26*60000);
+ equal(skipped.snapshot(26*60000).completedCycles,0);equal(skipped.snapshot(56*60000).completedCycles,1);
+ skipped.skipBreak(81*60000);equal(skipped.snapshot(81*60000).completedCycles,1);equal(skipped.snapshot(111*60000).completedCycles,2);
+ skipped.reset(50,111*60000);equal(skipped.snapshot(111*60000).completedCycles,0);
+ skipped.setMode(false,111*60000);equal(skipped.snapshot(200*60000).completedCycles,0);
+ const bg=new PomodoroSession();bg.start(0);equal(bg.snapshot(95*60000).completedCycles,3);
+ equal(new PomodoroSession(0).snapshot().completedCycles,0);
 }
 {
  const s=new PomodoroSession();s.start(0);s.pause(60000);equal(s.snapshot(900000).remainingMs,24*60000);s.start(900000);equal(s.snapshot(960000).remainingMs,23*60000);
@@ -32,17 +47,23 @@ const storage=new Map();const context={console,FocusAudio:Audio,PomodoroSession,
 vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../session.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../library.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../app.js'),'utf8'),context);
 async function run(code){return vm.runInContext(code,context)}
 (async()=>{
- equal(element('timer').textContent,'25:00');await run('toggle()');equal(await run('engine.active'),true);
+ equal(element('timer').textContent,'25:00');equal(element('cycleCount').textContent,'0 cycles completed');equal(element('cycleCount').hidden,false);await run('toggle()');equal(await run('engine.active'),true);
  now=25*60000;await run('tick()');equal(element('timer').textContent,'05:00');equal(await run('engine.active'),false);equal(await run('session.running'),true);equal(element('skipBreakBtn').hidden,false);equal(JSON.parse(storage.get('still-history')).length,1);
  await run('tick()');equal(JSON.parse(storage.get('still-history')).length,1);
+ equal(element('cycleCount').textContent,'0 cycles completed');
  await run('toggle()');now+=60000;await run('tick()');equal(element('timer').textContent,'05:00');await run('toggle()');equal(await run('engine.active'),false);
  now+=5*60000;await run('tick()');equal(element('timer').textContent,'25:00');equal(await run('engine.active'),true);equal(element('skipBreakBtn').hidden,true);equal(element('timerState').textContent,'FOCUS · ROUND 2');
+ equal(element('cycleCount').textContent,'1 cycle completed');
  now+=25*60000;await run('tick()');equal(await run('engine.active'),false);await run('resetSession()');equal(await run('engine.active'),true);equal(element('timer').textContent,'25:00');
+ equal(element('cycleCount').textContent,'0 cycles completed');
  now+=25*60000;await run('tick()');await buttons[1].listeners.click();equal(await run('session.snapshot().phase'),'focus');equal(await run('engine.active'),true);equal(element('timer').textContent,'50:00');
  await run('toggle()');await buttons[3].listeners.click();await run('toggle()');now+=3600000;await run('tick()');equal(element('timer').textContent,'60:00');equal(await run('engine.active'),true);
+ equal(element('cycleCount').hidden,true);
  await run('toggle()');await buttons[0].listeners.click();await run('toggle()');now+=95*60000;await run('tick()');equal(element('timerState').textContent,'FOCUS · ROUND 4');equal(await run('reportedFocus'),3);
+ equal(element('cycleCount').textContent,'3 cycles completed');equal(element('cycleCount').hidden,false);
  await run('toggle()');await run('engine.fail=true');await run('toggle()');equal(await run('session.running'),false);equal(element('timerPlayBtn').disabled,false);
  await run('engine.fail=false');await modeButtons[1].listeners.click();equal(await run('settings.timerMode'),'single');equal(element('sessionTitle').textContent,'Focus timer');equal(buttons[0].textContent,'25 min');equal(JSON.parse(storage.get('still-settings')).timerMode,'single');
+ equal(element('cycleCount').hidden,true);
  const before=JSON.parse(storage.get('still-history')).length;
  await run('toggle()');now+=25*60000;await run('tick()');equal(element('timer').textContent,'00:00');equal(element('timerState').textContent,'SESSION COMPLETE');equal(await run('engine.active'),false);equal(await run('session.status'),'complete');
  now+=60*60000;await run('tick()');equal(element('timer').textContent,'00:00');equal(JSON.parse(storage.get('still-history')).length,before+1);
