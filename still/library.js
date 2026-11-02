@@ -4,7 +4,8 @@ const MUSIC_EFFECTS=[{key:'low',label:'Low'},{key:'medium',label:'Medium'},{key:
 function mp3Path(file){return file.webkitRelativePath||file.name;}
 function isPlayableMp3(file){return /\.mp3$/i.test(file.name)&&!/(^|[\\/])_Still_Duplicates([\\/]|$)/i.test(mp3Path(file));}
 function normalizedMusicText(value){return value.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[_\-]+/g,' ').replace(/[^a-zA-Z0-9\s]/g,' ').toLowerCase().replace(/\s+/g,' ').trim();}
-function detectGenres(value){const text=normalizedMusicText(value);return MUSIC_GENRES.filter(({key})=>new RegExp(key==='lofi'?'\\blo\\s*fi\\b':key==='postrock'?'\\bpost\\s*rock\\b':key==='grooves'?'\\bgrooves?\\b':`\\b${key}\\b`).test(text)).map(({key})=>key);}
+function genrePattern(key){return key==='lofi'?'lo[\\s_-]*fi':key==='postrock'?'post[\\s_-]*rock':key==='grooves'?'grooves?':key;}
+function detectGenres(value){const text=normalizedMusicText(value);return MUSIC_GENRES.filter(({key})=>new RegExp(`\\b${genrePattern(key)}\\b`).test(text)).map(({key})=>key);}
 function detectEffect(value,allowBare=false){
  const text=normalizedMusicText(value),found=[];
  for(const [key,pattern] of [['low','low'],['medium','med(?:ium)?'],['high','high']]){
@@ -18,10 +19,17 @@ function parseMp3Metadata(file){
  const normalized=normalizedMusicText(stem),deep=/\bdeep\s*work\b/.exec(normalized),focus=/\bfocus\b/.exec(normalized);
  const marker=deep||focus,genreArea=marker?normalized.slice(marker.index+marker[0].length):normalized;
  let genres=detectGenres(genreArea),effect=detectEffect(stem);
+ const titleMarker=clean.search(/\b(?:focus|deep\s*work)\b/i);let title=(titleMarker>0?clean.slice(0,titleMarker):clean).trim()||stem;
+ // Older exports place the genre immediately before Focus/Deep Work.
+ // Require a separate trailing label and a remaining title, so words inside
+ // titles such as Acoustic Dreams do not become accidental genre labels.
+ if(!genres.length&&titleMarker>0){
+  const label=MUSIC_GENRES.find(({key})=>new RegExp(`[\\s_-]+${genrePattern(key)}$`,'i').test(title));
+  if(label){genres=[label.key];title=title.replace(new RegExp(`[\\s_-]+${genrePattern(label.key)}$`,'i'),'').trim();}
+ }
  const parents=mp3Path(file).split(/[\\/]/).slice(0,-1).reverse();
  if(!genres.length){for(const folder of parents){const labels=detectGenres(folder);if(labels.length){genres=labels;break;}}}
  if(effect==='unknown'){for(const folder of parents){const label=detectEffect(folder,true);if(label!=='unknown'){effect=label;break;}}}
- const titleMarker=clean.search(/\b(?:focus|deep\s*work)\b/i),title=(titleMarker>0?clean.slice(0,titleMarker):clean).trim()||stem;
  const bpm=/\b(\d{2,3})\s*bpm\b/.exec(normalized);
  return {title,genres,effect,bpm:bpm?Number(bpm[1]):null};
 }

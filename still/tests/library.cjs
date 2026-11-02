@@ -14,6 +14,23 @@ assert.deepEqual(meta.map(t=>t.genres),[['lofi'],['acoustic'],['lofi'],['piano']
 assert.deepEqual(meta.map(t=>t.bpm),[84,120,90,110,83]);assert.deepEqual(meta.map(t=>t.title),['Causeway','Moon Cycles','Organics','Sonus','Gentle Mornings']);
 for(const genre of MUSIC_GENRES){const t=parseMp3Metadata(file(`Title_Focus_DeepWork_${genre.label}_30_90bpm_MediumNEL.mp3`));assert.deepEqual(t.genres,[genre.key]);assert.equal(t.effect,'medium');}
 assert.deepEqual(parseMp3Metadata(file('AcousticDreams_Focus_DeepWork_LoFi_30_90bpm_HighNEL.mp3')).genres,['lofi']);
+const moreNames=[
+ 'TEMPLATE-From-Techno-FrmLTRUU-pads-less-dom 1..3_VBR5.mp3',
+ 'DriftingThroughTheVoid_Focus_DeepWork_Electronic_30_125BPM_MedNEL_Nrmlzd2_VBR5.mp3',
+ 'SpringTide_Focus_DeepWork_Classical_30_100bpm_HighNEL_Nrmlzd2_VBR5.mp3',
+ 'The Chase Cinematic Focus Deep Work Conor 112bpm_Nrmlzd2_VBR5.mp3',
+ 'TheBecoming_Focus_DeepWork_Cinematic_30_100BPM_HighNEL_Nrmlzd2_VBR5.mp3'
+];
+const more=moreNames.map(n=>parseMp3Metadata(file(n)));
+assert.deepEqual(more.map(t=>t.genres),[[],['electronic'],['classical'],['cinematic'],['cinematic']]);
+assert.deepEqual(more.map(t=>t.effect),['unknown','medium','high','unknown','high']);
+assert.deepEqual(more.map(t=>t.bpm),[null,125,100,112,100]);
+assert.deepEqual(more.slice(1).map(t=>t.title),['Drifting Through The Void','Spring Tide','The Chase','The Becoming']);
+assert.deepEqual(parseMp3Metadata(file('AcousticDreams_Focus_DeepWork_30_90bpm.mp3')).genres,[]);
+assert.deepEqual(parseMp3Metadata(file('The Chase Post-Rock Focus Deep Work 112bpm.mp3')).genres,['postrock']);
+assert.deepEqual(parseMp3Metadata(file('The Chase Cinematic Focus Deep Work Piano 112bpm.mp3')).genres,['piano']); // Explicit suffix labels take priority.
+const labeledTemplate=parseMp3Metadata(file(moreNames[0],`Music/Low effect/Electronic/${moreNames[0]}`));
+assert.deepEqual(labeledTemplate.genres,['electronic']);assert.equal(labeledTemplate.effect,'low');
 assert.equal(parseMp3Metadata(file('Moon_120bpm_Session_4_Nrmlzd2_VBR5.mp3')).effect,'unknown');
 const folder=parseMp3Metadata(file('Track.mp3','Music/High effect/Post Rock/Track.mp3'));assert.equal(folder.effect,'high');assert.deepEqual(folder.genres,['postrock']);
 assert.equal(parseMp3Metadata(file('Track_LowNEL.mp3','Music/High effect/Track_LowNEL.mp3')).effect,'low');
@@ -29,4 +46,4 @@ assert.equal(filterMp3Tracks(tracks,[],[]).length,5);
 const library=new MP3Library();assert.equal(library.neighbor(),-1);library.load({tracks});library.setFilters(['lofi'],['high']);assert.equal(library.current.title,'Organics');assert.equal(library.neighbor(1),0);
 library.setFilters([],['high']);assert.equal(library.current.title,'Organics');assert.equal(library.neighbor(1),0);library.setShuffle(true,()=>0);assert.equal(library.order[0],library.index);assert.equal(library.order.length,2);
 library.setFilters(['drone'],['low']);assert.equal(library.current,null);assert.equal(library.neighbor(),-1);library.setFilters([],[]);assert.equal(library.tracks.length,5);library.clear();assert.equal(library.allTracks.length,0);
-console.log('Filename/category checks passed for all five samples, ten genres, NEL/folder labels, multi-select logic, unlabeled tracks, queue retention/shuffle, and no browser hashing.');
+console.log('Filename/category checks passed for all ten samples, legacy leading genre labels, title-word safeguards, ten genres, NEL/folder labels, multi-select logic, unlabeled tracks, queue retention/shuffle, and no browser hashing.');

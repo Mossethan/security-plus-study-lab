@@ -34,6 +34,8 @@ Browse & filters supports multiple genres and neural-effect levels. Selections w
 
 Supported genres: Acoustic, Atmospheric, Cinematic, Classical, Drone, Electronic, Grooves, Lofi, Piano, and Post rock. The parser recognizes LowNEL, MedNEL/MediumNEL, HighNEL, and explicit effect folder labels. Untagged effects remain Unlabeled; BPM, encoding flags, normalization flags, and download-copy suffixes are not used to infer an effect level. Files do not need to be renamed when their existing labels are recognizable.
 
+Legacy exports with a genre immediately before Focus or Deep Work are also recognized (for example, The Chase Cinematic Focus Deep Work becomes The Chase / Cinematic). Genre labels after Deep Work take priority. Production-template names without recognizable labels stay unclassified; put these in a genre and effect folder after confirming their categories, such as Music/Low effect/Electronic/. No category is guessed from sound, tempo, or production notes.
+
 Use the player controls for previous/next track, play/pause, seeking, and automatic track advancement. Shuffle is limited to matching tracks. The playlist repeats at the end. Both timer modes remain available. The + button accepts one repeating audio file or multiple MP3s as a library.
 
 Duplicate cleanup remains separate in tools/MP3-Cleanup and the existing downloadable ZIP. The utility quarantines exact duplicates with a restorable manifest, without permanently deleting or overwriting files. Native Windows execution has not been verified in this Linux environment.
