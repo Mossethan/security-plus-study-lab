@@ -5,3 +5,25 @@
 .mixer-title,.session-panel{flex-wrap:wrap}
 .control-label{gap:12px}
 .preset>span:nth-child(2){min-width:0}
+
+/* An additional 20% text increase within the sound controls. */
+.mixer h3{font-size:24.96px}
+.mixer .mix-tag{font-size:10.92px}
+.mixer .muted{font-size:15.6px}
+.mixer .control-label{font-size:17.16px}
+.mixer .control-label output{font-size:15.6px}
+.mixer .control p{font-size:14.04px}
+.mixer .segmented button{font-size:12.48px;white-space:normal;min-width:0}
+.mixer .rate-label select{font-size:14.04px}
+.mixer .upload-box span{font-size:12.48px}
+.mixer .upload-box p{font-size:15.6px}
+.mixer .local-note{font-size:12.48px}
+@media(max-width:650px){
+  .mixer h3{font-size:28.08px}
+  .mixer .muted{font-size:17.16px}
+  .mixer .control-label{font-size:18.72px}
+  .mixer .control p{font-size:15.6px}
+  .mixer .segmented button{font-size:15.6px}
+  .mixer .upload-box span{font-size:14.04px}
+  .mixer .upload-box p{font-size:17.16px}
+}
