@@ -1,15 +1,32 @@
 const assert=require('node:assert/strict');
-const {webcrypto}=require('node:crypto');const {scanMp3Files,MP3Library,duplicateCsv}=require('../library.js');
-const file=(name,content,path=name)=>{const bytes=Buffer.from(content);return {name,size:bytes.length,webkitRelativePath:path,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)};};
-(async()=>{
- const a=file('A.mp3','abc','Music/A.mp3'),copy=file('A copy.mp3','abc','Music/A copy.mp3'),b=file('B.mp3','xyz','Music/B.mp3');
- const result=await scanMp3Files([copy,b,a,file('notes.txt','abc'),file('old.mp3','abc','Music/_Still_Duplicates/run/old.mp3')],{cryptoProvider:webcrypto});
- assert.equal(result.total,3);assert.equal(result.tracks.length,2);assert.equal(result.duplicates.length,1);assert.equal(result.duplicates[0].keptPath,'Music/A.mp3');assert.equal(result.duplicates[0].path,'Music/A copy.mp3');assert.equal(result.duplicates[0].hash.length,64);
- const unique=await scanMp3Files([file('A.MP3','different-size'),a],{cryptoProvider:{subtle:{digest(){throw Error('Unique sizes should not be hashed');}}}});assert.equal(unique.tracks.length,2);assert.equal(unique.errors.length,0);
- const bad=file('bad.mp3','abc');bad.arrayBuffer=async()=>{throw Error('File no longer available');};const mixed=await scanMp3Files([a,bad],{cryptoProvider:webcrypto});assert.equal(mixed.tracks.length,1);assert.equal(mixed.errors.length,1);assert.equal(mixed.duplicates.length,0);
- const abort=new AbortController();await assert.rejects(scanMp3Files([a,b,copy],{cryptoProvider:webcrypto,signal:abort.signal,onProgress:()=>abort.abort()}),{name:'AbortError'});
- const library=new MP3Library();assert.equal(library.neighbor(),-1);library.load(result);assert.equal(library.current.file.name,'A.mp3');assert.equal(library.neighbor(1),1);assert.equal(library.neighbor(-1),1);library.select(1);assert.equal(library.neighbor(1),0);assert.equal(library.select(100),null);assert.equal(library.index,1);library.setShuffle(true,()=>0);assert.equal(library.order[0],1);assert.equal(new Set(library.order).size,2);library.setShuffle(false);assert.deepEqual(library.order,[0,1]);assert.equal(library.index,1);library.clear();assert.equal(library.current,null);assert.equal(library.neighbor(),-1);
- const one=new MP3Library();one.load({tracks:[{file:a,path:a.webkitRelativePath}],duplicates:[],errors:[]});assert.equal(one.neighbor(1),0);
- const csv=duplicateCsv([{path:'=unsafe,".mp3',keptPath:'Music/A.mp3',size:3,hash:'abc'}]);assert.ok(csv.includes("\"'=unsafe,\"\".mp3\""));assert.ok(csv.includes('SHA-256'));
- console.log('MP3 library checks passed: renamed duplicates, same-size distinct tracks, quarantine exclusion, unreadable files, cancellation, queue wrapping/shuffle, empty/single libraries, and safe CSV export.');
-})().catch(error=>{console.error(error);process.exitCode=1});
+const {MUSIC_GENRES,parseMp3Metadata,indexMp3Files,filterMp3Tracks,MP3Library}=require('../library.js');
+const names=[
+ 'Causeway_Focus_Deep_Work_LoFi_30_84bpm_MedNEL_Nrmlzd2_VBR5 (1).mp3',
+ 'Moon Cycles Deep Work Acoustic Focus Chris 120bpm Session 4_VBR5 (3).mp3',
+ 'Organics_Focus_Deep Work_LoFi_30_90bpm_HighNEL_Nrmlzd2_VBR5.mp3',
+ 'Sonus_Focus_DeepWork_Piano_30_110bpm_LowNEL_Nrmlzd2_VBR5.mp3',
+ 'GentleMornings_Focus_DeepWork_Acoustic_30_83bpm_HighNEL_Nrmlzd2_VBR5.mp3'
+];
+const file=(name,path=name)=>({name,size:123,webkitRelativePath:path,arrayBuffer(){throw Error('The website must not read/hash file contents');}});
+const files=names.map(n=>file(n)),meta=files.map(parseMp3Metadata);
+assert.deepEqual(meta.map(t=>t.effect),['medium','unknown','high','low','high']);
+assert.deepEqual(meta.map(t=>t.genres),[['lofi'],['acoustic'],['lofi'],['piano'],['acoustic']]);
+assert.deepEqual(meta.map(t=>t.bpm),[84,120,90,110,83]);assert.deepEqual(meta.map(t=>t.title),['Causeway','Moon Cycles','Organics','Sonus','Gentle Mornings']);
+for(const genre of MUSIC_GENRES){const t=parseMp3Metadata(file(`Title_Focus_DeepWork_${genre.label}_30_90bpm_MediumNEL.mp3`));assert.deepEqual(t.genres,[genre.key]);assert.equal(t.effect,'medium');}
+assert.deepEqual(parseMp3Metadata(file('AcousticDreams_Focus_DeepWork_LoFi_30_90bpm_HighNEL.mp3')).genres,['lofi']);
+assert.equal(parseMp3Metadata(file('Moon_120bpm_Session_4_Nrmlzd2_VBR5.mp3')).effect,'unknown');
+const folder=parseMp3Metadata(file('Track.mp3','Music/High effect/Post Rock/Track.mp3'));assert.equal(folder.effect,'high');assert.deepEqual(folder.genres,['postrock']);
+assert.equal(parseMp3Metadata(file('Track_LowNEL.mp3','Music/High effect/Track_LowNEL.mp3')).effect,'low');
+const indexed=indexMp3Files([...files,file(names[0]),file('note.txt'),file('copy.mp3','Music/_Still_Duplicates/run/copy.mp3')]);assert.equal(indexed.tracks.length,6); // Copies stay in the player; cleanup is external.
+const tracks=indexMp3Files(files).tracks;
+assert.equal(filterMp3Tracks(tracks,['lofi'],['high']).length,1);
+assert.equal(filterMp3Tracks(tracks,[],['high']).length,2);
+assert.equal(filterMp3Tracks(tracks,['lofi','postrock'],['high']).length,1);
+assert.equal(filterMp3Tracks(tracks,['lofi'],['low','medium']).length,1);
+assert.equal(filterMp3Tracks(tracks,['acoustic'],['unknown']).length,1);
+assert.equal(filterMp3Tracks(tracks,['lofi'],['unknown']).length,0);
+assert.equal(filterMp3Tracks(tracks,[],[]).length,5);
+const library=new MP3Library();assert.equal(library.neighbor(),-1);library.load({tracks});library.setFilters(['lofi'],['high']);assert.equal(library.current.title,'Organics');assert.equal(library.neighbor(1),0);
+library.setFilters([],['high']);assert.equal(library.current.title,'Organics');assert.equal(library.neighbor(1),0);library.setShuffle(true,()=>0);assert.equal(library.order[0],library.index);assert.equal(library.order.length,2);
+library.setFilters(['drone'],['low']);assert.equal(library.current,null);assert.equal(library.neighbor(),-1);library.setFilters([],[]);assert.equal(library.tracks.length,5);library.clear();assert.equal(library.allTracks.length,0);
+console.log('Filename/category checks passed for all five samples, ten genres, NEL/folder labels, multi-select logic, unlabeled tracks, queue retention/shuffle, and no browser hashing.');

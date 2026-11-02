@@ -13,7 +13,7 @@ A personal sound player for studying and working. Buildless HTML, CSS and JavaSc
 
 Audio starts after a user gesture. Keep the page open while listening; mobile operating systems may suspend browser audio when locked. Imported files stay in memory on the device and must be chosen again after a reload. Settings and history do not sync between browsers.
 
-This is an original experimental focus sound tool. It does not use Brain.fm assets or reproduce its proprietary system or established effects. The pulse rate describes amplitude modulation, not the audio's pitch. No particular pulse setting is claimed to improve cognition.
+This is an original experimental focus sound tool. The pulse rate describes amplitude modulation, not the audio's pitch. No particular pulse setting is claimed to improve cognition.
 
 Serve this folder with a static web server. Run `node tests/timer.cjs` from this folder for timer boundary checks. No build step is required.
 
@@ -28,10 +28,14 @@ The player has no ChatGPT sign-in dependency. It is a public static page. Person
 
 ## Local MP3 library
 
-Choose folder reads MP3 files (including subfolders) locally and skips byte-for-byte duplicates using SHA-256 hashes. There is no audio upload. Folder selections are not retained across reloads; select the folder again. The _Still_Duplicates quarantine folder is ignored.
+Choose folder reads MP3 files (including subfolders) locally. It indexes filenames and folder labels without reading or hashing audio contents. There is no audio upload and no duplicate finder in the website. Folder selections are not retained across reloads; select the folder again. The _Still_Duplicates quarantine folder from the standalone cleanup tool is ignored.
 
-Use the player controls for previous/next track, play/pause, seeking, and automatic track advancement. View tracks opens the playlist and optional shuffle. The playlist repeats at the end. Both timer modes continue to work: Pomodoro breaks pause audio, and single sessions stop it. The small + button accepts one audio file with repeat-one playback, or multiple MP3s as a library.
+Browse & filters supports multiple genres and neural-effect levels. Selections within each group match any selected option; the genre group and effect group must both match. All means unrestricted. Apply filters updates playback, preserving the current track and time if it still matches. An empty match pauses the session and does not switch to generative audio. Filter choices persist in this browser.
 
-View tracks also exposes the duplicate CSV report and a Windows cleanup download. The utility in tools/MP3-Cleanup quarantines exact duplicates with a restorable manifest; it never permanently deletes or overwrites files. Its launcher uses Windows PowerShell; native Windows execution has not been verified in this Linux environment.
+Supported genres: Acoustic, Atmospheric, Cinematic, Classical, Drone, Electronic, Grooves, Lofi, Piano, and Post rock. The parser recognizes LowNEL, MedNEL/MediumNEL, HighNEL, and explicit effect folder labels. Untagged effects remain Unlabeled; BPM, encoding flags, normalization flags, and download-copy suffixes are not used to infer an effect level. Files do not need to be renamed when their existing labels are recognizable.
 
-Run node tests/library.cjs, node tests/audio-files.cjs, and node tests/timer.cjs from this folder.
+Use the player controls for previous/next track, play/pause, seeking, and automatic track advancement. Shuffle is limited to matching tracks. The playlist repeats at the end. Both timer modes remain available. The + button accepts one repeating audio file or multiple MP3s as a library.
+
+Duplicate cleanup remains separate in tools/MP3-Cleanup and the existing downloadable ZIP. The utility quarantines exact duplicates with a restorable manifest, without permanently deleting or overwriting files. Native Windows execution has not been verified in this Linux environment.
+
+Run node tests/library.cjs, node tests/filters.cjs, node tests/audio-files.cjs, and node tests/timer.cjs from this folder.

@@ -1,42 +1,51 @@
 'use strict';
+const MUSIC_GENRES=[{key:'acoustic',label:'Acoustic'},{key:'atmospheric',label:'Atmospheric'},{key:'cinematic',label:'Cinematic'},{key:'classical',label:'Classical'},{key:'drone',label:'Drone'},{key:'electronic',label:'Electronic'},{key:'grooves',label:'Grooves'},{key:'lofi',label:'Lofi'},{key:'piano',label:'Piano'},{key:'postrock',label:'Post rock'}];
+const MUSIC_EFFECTS=[{key:'low',label:'Low'},{key:'medium',label:'Medium'},{key:'high',label:'High'},{key:'unknown',label:'Unlabeled'}];
 function mp3Path(file){return file.webkitRelativePath||file.name;}
 function isPlayableMp3(file){return /\.mp3$/i.test(file.name)&&!/(^|[\\/])_Still_Duplicates([\\/]|$)/i.test(mp3Path(file));}
-async function scanMp3Files(files,{onProgress=()=>{},signal,cryptoProvider=globalThis.crypto}={}){
-  const candidates=Array.from(files).filter(isPlayableMp3).sort((a,b)=>a.name.length-b.name.length||mp3Path(a).length-mp3Path(b).length||mp3Path(a).localeCompare(mp3Path(b)));
-  const sizes=new Map();for(const file of candidates)sizes.set(file.size,(sizes.get(file.size)||0)+1);
-  const seen=new Map(),tracks=[],duplicates=[],errors=[];let done=0;
-  const abort=()=>{if(signal?.aborted)throw new DOMException('Folder scan cancelled.','AbortError');};
-  for(const file of candidates){
-    abort();const path=mp3Path(file);
-    try{
-      let hash=null;
-      if(sizes.get(file.size)>1){
-        if(!cryptoProvider?.subtle)throw new Error('Secure hashing is unavailable. Open Still using its HTTPS address.');
-        const bytes=await file.arrayBuffer();abort();const digest=await cryptoProvider.subtle.digest('SHA-256',bytes);abort();
-        hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
-      }
-      const key=hash?`${file.size}:${hash}`:null;
-      if(key&&seen.has(key))duplicates.push({file,path,keptPath:seen.get(key).path,hash,size:file.size});
-      else{const track={file,path,hash,size:file.size};tracks.push(track);if(key)seen.set(key,track);}
-    }catch(error){if(error.name==='AbortError')throw error;errors.push({path,message:error.message||'File could not be read.'});}
-    onProgress({done:++done,total:candidates.length,path});
-  }
-  return {tracks:tracks.sort((a,b)=>a.path.localeCompare(b.path,undefined,{numeric:true})),duplicates,errors,total:candidates.length};
+function normalizedMusicText(value){return value.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[_\-]+/g,' ').replace(/[^a-zA-Z0-9\s]/g,' ').toLowerCase().replace(/\s+/g,' ').trim();}
+function detectGenres(value){const text=normalizedMusicText(value);return MUSIC_GENRES.filter(({key})=>new RegExp(key==='lofi'?'\\blo\\s*fi\\b':key==='postrock'?'\\bpost\\s*rock\\b':key==='grooves'?'\\bgrooves?\\b':`\\b${key}\\b`).test(text)).map(({key})=>key);}
+function detectEffect(value,allowBare=false){
+ const text=normalizedMusicText(value),found=[];
+ for(const [key,pattern] of [['low','low'],['medium','med(?:ium)?'],['high','high']]){
+  if(new RegExp(`\\b${pattern}\\s*(?:nel|neural effects?|effects?)\\b|\\b(?:nel|neural effects?|effects?)\\s*${pattern}\\b`).test(text)||(allowBare&&new RegExp(`^${pattern}$`).test(text)))found.push(key);
+ }
+ return found.length===1?found[0]:'unknown';
+}
+function parseMp3Metadata(file){
+ const stem=file.name.replace(/\.mp3$/i,'').replace(/\s*\(\d+\)\s*$/,'');
+ const clean=stem.replace(/_/g,' ').replace(/([a-z])([A-Z][a-z])/g,'$1 $2').replace(/\s+/g,' ').trim();
+ const normalized=normalizedMusicText(stem),deep=/\bdeep\s*work\b/.exec(normalized),focus=/\bfocus\b/.exec(normalized);
+ const marker=deep||focus,genreArea=marker?normalized.slice(marker.index+marker[0].length):normalized;
+ let genres=detectGenres(genreArea),effect=detectEffect(stem);
+ const parents=mp3Path(file).split(/[\\/]/).slice(0,-1).reverse();
+ if(!genres.length){for(const folder of parents){const labels=detectGenres(folder);if(labels.length){genres=labels;break;}}}
+ if(effect==='unknown'){for(const folder of parents){const label=detectEffect(folder,true);if(label!=='unknown'){effect=label;break;}}}
+ const titleMarker=clean.search(/\b(?:focus|deep\s*work)\b/i),title=(titleMarker>0?clean.slice(0,titleMarker):clean).trim()||stem;
+ const bpm=/\b(\d{2,3})\s*bpm\b/.exec(normalized);
+ return {title,genres,effect,bpm:bpm?Number(bpm[1]):null};
+}
+function indexMp3Files(files){
+ return {tracks:Array.from(files).filter(isPlayableMp3).map(file=>({file,path:mp3Path(file),size:file.size,...parseMp3Metadata(file)})).sort((a,b)=>a.path.localeCompare(b.path,undefined,{numeric:true})),errors:[]};
+}
+function filterMp3Tracks(tracks,genres=[],effects=[]){
+ return tracks.filter(track=>(!genres.length||track.genres.some(g=>genres.includes(g))||(!track.genres.length&&genres.includes('unknown')))&&(!effects.length||effects.includes(track.effect)));
 }
 class MP3Library {
-  constructor(){this.tracks=[];this.duplicates=[];this.errors=[];this.index=-1;this.order=[];this.shuffle=false;}
-  load(result){this.tracks=result.tracks;this.duplicates=result.duplicates;this.errors=result.errors;this.index=this.tracks.length?0:-1;this.setShuffle(this.shuffle);}
-  get current(){return this.tracks[this.index]||null;}
-  select(index){if(!Number.isInteger(index)||index<0||index>=this.tracks.length)return null;this.index=index;return this.current;}
-  neighbor(direction=1){if(!this.order.length)return -1;return this.order[(this.order.indexOf(this.index)+direction+this.order.length)%this.order.length];}
-  setShuffle(enabled,random=Math.random){
-    this.shuffle=enabled;this.order=this.tracks.map((_,i)=>i);
-    if(enabled&&this.tracks.length){const rest=this.order.filter(i=>i!==this.index);for(let i=rest.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[rest[i],rest[j]]=[rest[j],rest[i]];}this.order=this.index>=0?[this.index,...rest]:rest;}
-  }
-  clear(){this.load({tracks:[],duplicates:[],errors:[]});}
+ constructor(){this.allTracks=[];this.tracks=[];this.errors=[];this.index=-1;this.order=[];this.shuffle=false;this.genres=[];this.effects=[];}
+ load(result){this.allTracks=result.tracks;this.errors=result.errors||[];this.index=-1;this.tracks=[];this.setFilters(this.genres,this.effects);}
+ get current(){return this.tracks[this.index]||null;}
+ select(index){if(!Number.isInteger(index)||index<0||index>=this.tracks.length)return null;this.index=index;return this.current;}
+ neighbor(direction=1){if(!this.order.length)return -1;return this.order[(this.order.indexOf(this.index)+direction+this.order.length)%this.order.length];}
+ setFilters(genres=[],effects=[]){
+  const previous=this.current?.file;this.genres=[...genres];this.effects=[...effects];this.tracks=filterMp3Tracks(this.allTracks,genres,effects);
+  const kept=this.tracks.findIndex(track=>track.file===previous);this.index=kept>=0?kept:this.tracks.length?0:-1;this.setShuffle(this.shuffle);
+  return this.current?.file!==previous;
+ }
+ setShuffle(enabled,random=Math.random){
+  this.shuffle=enabled;this.order=this.tracks.map((_,i)=>i);
+  if(enabled&&this.tracks.length){const rest=this.order.filter(i=>i!==this.index);for(let i=rest.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[rest[i],rest[j]]=[rest[j],rest[i]];}this.order=this.index>=0?[this.index,...rest]:rest;}
+ }
+ clear(){this.allTracks=[];this.tracks=[];this.errors=[];this.index=-1;this.order=[];}
 }
-function duplicateCsv(duplicates){
- const cell=value=>{let s=String(value??'');if(/^[=+@-]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
- return '\ufeff'+[['Duplicate file','Keep this file','Bytes','SHA-256'],...duplicates.map(d=>[d.path,d.keptPath,d.size,d.hash])].map(row=>row.map(cell).join(',')).join('\r\n');
-}
-if(typeof module!=='undefined'&&module.exports)module.exports={scanMp3Files,MP3Library,mp3Path,isPlayableMp3,duplicateCsv};
+if(typeof module!=='undefined'&&module.exports)module.exports={MUSIC_GENRES,MUSIC_EFFECTS,parseMp3Metadata,indexMp3Files,filterMp3Tracks,MP3Library,mp3Path,isPlayableMp3};

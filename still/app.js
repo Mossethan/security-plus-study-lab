@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const engine=new FocusAudio();
 const presets={study:{title:'Quiet Current',description:'Warm keys drifting through a soft, textured haze.',category:'01',music:65,texture:30,pulse:12,rate:16,textureType:'brown'},work:{title:'Forward Motion',description:'A steady undercurrent for the things that need your attention.',category:'02',music:75,texture:20,pulse:25,rate:16,textureType:'rain'},reading:{title:'Open Pages',description:'Soft, spacious tones with room for every word.',category:'03',music:40,texture:40,pulse:0,rate:12,textureType:'pink'}};
-let settings={preset:'study',music:65,texture:30,pulse:12,rate:16,textureType:'brown',volume:45,minutes:25,timerMode:'pomodoro',theme:'amber',shuffle:false};
+let settings={preset:'study',music:65,texture:30,pulse:12,rate:16,textureType:'brown',volume:45,minutes:25,timerMode:'pomodoro',theme:'amber',shuffle:false,genres:[],effects:[]};
 let history=[];
 try{const saved=JSON.parse(localStorage.getItem('still-settings')||'null');if(saved&&typeof saved==='object'){
 for(const k of ['music','texture','volume'])if(Number.isFinite(saved[k]))settings[k]=Math.max(0,Math.min(100,saved[k]));
@@ -12,11 +12,13 @@ if([0,25,50,90].includes(saved.minutes))settings.minutes=saved.minutes;
 if(['pomodoro','single'].includes(saved.timerMode))settings.timerMode=saved.timerMode;
 if(['amber','clay','rose'].includes(saved.theme))settings.theme=saved.theme;
 if(typeof saved.shuffle==='boolean')settings.shuffle=saved.shuffle;
+if(Array.isArray(saved.genres))settings.genres=saved.genres.filter(g=>MUSIC_GENRES.some(x=>x.key===g)||g==='unknown');
+if(Array.isArray(saved.effects))settings.effects=saved.effects.filter(e=>MUSIC_EFFECTS.some(x=>x.key===e));
 if(presets[saved.preset])settings.preset=saved.preset;
 if(['brown','pink','rain'].includes(saved.textureType))settings.textureType=saved.textureType;
 }const h=JSON.parse(localStorage.getItem('still-history')||'[]');if(Array.isArray(h))history=h;}catch{}
-const library=new MP3Library();library.shuffle=settings.shuffle;
-let scanController=null,loadingTrack=false;
+const library=new MP3Library();library.shuffle=settings.shuffle;library.setFilters(settings.genres,settings.effects);
+let loadingTrack=false,importingLibrary=false,draftGenres=[],draftEffects=[];
 const previousIcon=$('resetBtn').innerHTML,nextIcon=$('newBtn').innerHTML;
 const session=new PomodoroSession(settings.minutes,settings.timerMode==='pomodoro');
 let busy=false,variation=1,uploadName='',toastTimeout,reportedFocus=0,lastPhase='focus';
@@ -30,16 +32,18 @@ function syncSound(){
     else if(!shouldPlay&&(engine.active||engine.ctx?.state==='running'))await engine.pause();
   });return soundQueue;
 }
-function setBusy(value){busy=value;$('playBtn').disabled=value;$('timerPlayBtn').disabled=value;}
+function noMatchingTracks(){return library.allTracks.length>0&&library.tracks.length===0;}
+function setBusy(value){busy=value;$('playBtn').disabled=value||noMatchingTracks();$('timerPlayBtn').disabled=value||noMatchingTracks();}
 function handleAudioError(error){session.pause();render();toast(error.message||'Audio could not resume. Press Resume to try again.');}
 
 function applyTheme(){document.documentElement.dataset.theme=settings.theme;$('theme').value=settings.theme;}
 function setSelected(selector,attribute,value){document.querySelectorAll(selector).forEach(b=>{const selected=b.dataset[attribute]===String(value);b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});}
 function render(){
 const p=presets[settings.preset];$('crumb').textContent=settings.preset==='work'?'DEEP WORK':settings.preset.toUpperCase();$('mixTag').textContent=(settings.preset==='work'?'WORK':settings.preset.toUpperCase())+' MIX';
-$('trackTitle').textContent=uploadName?uploadName.replace(/\.[^.]+$/,''):p.title;$('trackTitle').title=uploadName;
-$('trackDesc').textContent=library.current?`Track ${library.index+1} of ${library.tracks.length} · ${library.current.path.includes('/')?library.current.path.split('/')[0]:'Local MP3 files'}`:uploadName||p.description;
-$('trackCategory').textContent=library.current?'LOCAL MP3 LIBRARY':uploadName?'PERSONAL AUDIO · ON REPEAT':`GENERATIVE SOUNDSCAPE · ${p.category}`;
+const current=library.current,hasLibrary=library.allTracks.length>0;
+$('trackTitle').textContent=noMatchingTracks()?'No matching tracks':current?current.title:uploadName?uploadName.replace(/\.[^.]+$/,''):p.title;$('trackTitle').title=uploadName;
+$('trackDesc').textContent=noMatchingTracks()?'Open Browse & filters to choose another combination.':current?`${current.genres.map(genreLabel).join(', ')||'Unlabeled genre'} · ${effectLabel(current.effect)}${current.bpm?' · '+current.bpm+' BPM':''} · ${library.index+1}/${library.tracks.length}`:uploadName||p.description;
+$('trackCategory').textContent=hasLibrary?'YOUR FILTERED MP3 LIBRARY':uploadName?'PERSONAL AUDIO · ON REPEAT':`GENERATIVE SOUNDSCAPE · ${p.category}`;
 $('fileLabel').textContent=uploadName||'Bring a track of your own.';$('removeFile').hidden=!uploadName;$('fileLabel').title=uploadName;renderLibraryControls();
 for(const name of ['music','texture','pulse','volume']){const el=$(name);el.value=settings[name];el.style.setProperty('--fill',settings[name]/Number(el.max)*100+'%');$(name+'Value').textContent=name==='pulse'?(settings.pulse===0?'Off':`${settings.pulse<20?'Subtle':'Present'} · ${settings.pulse}%`):settings[name]+'%';}
 $('rate').value=settings.rate;$('rate').disabled=settings.pulse===0;
@@ -67,7 +71,7 @@ function renderTimer(){
  $('skipBreakBtn').hidden=snap.phase!=='break';
 }
 async function toggle(){
- if(busy)return;setBusy(true);
+ if(busy)return;if(noMatchingTracks()){toast('No tracks match these filters. Open Browse & filters to change them.');return;}setBusy(true);
  try{if(session.running)session.pause();else{if(session.status==='complete')reportedFocus=0;session.start();}render();await syncSound();}
  catch(error){handleAudioError(error);await engine.pause();}
  finally{setBusy(false);render();}
@@ -94,7 +98,7 @@ document.querySelectorAll('[data-timer-mode]').forEach(b=>b.addEventListener('cl
 }));
 $('theme').addEventListener('change',e=>{settings.theme=e.target.value;applyTheme();save();});
 $('uploadBtn').addEventListener('click',()=>$('fileInput').click());
-$('fileInput').addEventListener('change',async e=>{const files=Array.from(e.target.files||[]);if(files.length>1){e.target.value='';await importMp3Folder(files);return;}const file=files[0];if(!file)return;if(scanController)scanController.abort();$('uploadBtn').disabled=true;toast('Opening your audio…');try{const ready=await engine.setFile(file);if(!ready)return;library.clear();uploadName=file.name;bindTrackEvents();render();toast('Your track is ready. It will loop through your session.');}catch(error){if(!engine.file)uploadName='';toast(error.message||'Unable to play that audio file.');render();}finally{$('uploadBtn').disabled=false;e.target.value='';}});
+$('fileInput').addEventListener('change',async e=>{const files=Array.from(e.target.files||[]);if(files.length>1){e.target.value='';await importMp3Folder(files);return;}const file=files[0];if(!file)return;$('uploadBtn').disabled=true;toast('Opening your audio…');try{const ready=await engine.setFile(file);if(!ready)return;library.clear();uploadName=file.name;bindTrackEvents();render();toast('Your track is ready. It will loop through your session.');}catch(error){if(!engine.file)uploadName='';toast(error.message||'Unable to play that audio file.');render();}finally{$('uploadBtn').disabled=false;e.target.value='';}});
 $('removeFile').addEventListener('click',()=>{library.clear();engine.clearFile();uploadName='';engine.variation();render();toast('Back to your generative soundscape.');});
 $('infoBtn').addEventListener('click',()=>{render();$('about').showModal();});$('closeAbout').addEventListener('click',()=>$('about').close());$('about').addEventListener('click',e=>{if(e.target===$('about')){const r=$('about').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('about').close();}});
 
@@ -106,15 +110,18 @@ function updateTrackPosition(){
  $('trackSeek').style.setProperty('--fill',duration>0?Math.min(100,current/duration*100)+'%':'0%');
 }
 function bindTrackEvents(){if(!engine.file)return;engine.file.addEventListener('timeupdate',updateTrackPosition);engine.file.addEventListener('durationchange',updateTrackPosition);updateTrackPosition();}
+function genreLabel(key){return MUSIC_GENRES.find(g=>g.key===key)?.label||'Unlabeled';}
+function effectLabel(key){return key==='unknown'?'Unlabeled effect':(MUSIC_EFFECTS.find(e=>e.key===key)?.label||'Unlabeled')+' effect';}
 function renderLibraryControls(){
- const hasLibrary=Boolean(library.current);document.body.classList.toggle('has-library',Boolean(uploadName));
- $('libraryBtn').hidden=!library.tracks.length;$('trackPosition').hidden=!uploadName;
- $('localNote').textContent=library.tracks.length?`${library.tracks.length} ${library.tracks.length===1?'track':'tracks'} · ${library.duplicates.length} duplicates skipped`:'Your audio stays on this device.';
- $('fileLabel').textContent=library.current?uploadName:uploadName||'Bring a track of your own.';
+ const hasLibrary=library.allTracks.length>0;document.body.classList.toggle('has-library',Boolean(uploadName)||hasLibrary);
+ $('libraryBtn').hidden=!hasLibrary;$('trackPosition').hidden=!uploadName||noMatchingTracks();$('removeFile').hidden=!uploadName&&!hasLibrary;
+ $('localNote').textContent=hasLibrary?`${library.tracks.length} of ${library.allTracks.length} tracks match your filters`:'Your audio stays on this device.';
+ $('fileLabel').textContent=noMatchingTracks()?'No tracks match your filters':uploadName||'Bring a track of your own.';
  $('resetBtn').setAttribute('aria-label',hasLibrary?'Previous track':'Reset session');$('resetBtn').title=hasLibrary?'Previous track':'Reset session';
  $('newBtn').setAttribute('aria-label',hasLibrary?'Next track':'Create a new sound variation');$('newBtn').title=hasLibrary?'Next track':'New variation';
  $('resetBtn').innerHTML=hasLibrary?'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zm12 0v14L9 12z"/></svg>':previousIcon;
  $('newBtn').innerHTML=hasLibrary?'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM6 5l9 7-9 7z"/></svg>':nextIcon;
+ $('resetBtn').disabled=noMatchingTracks();$('newBtn').disabled=noMatchingTracks();$('playBtn').disabled=busy||noMatchingTracks();$('timerPlayBtn').disabled=busy||noMatchingTracks();
 }
 async function selectLibraryTrack(index,start=false){
  if(loadingTrack)return;const track=library.tracks[index];if(!track)return;loadingTrack=true;
@@ -127,40 +134,67 @@ async function selectLibraryTrack(index,start=false){
  finally{loadingTrack=false;}
 }
 async function changeTrack(direction=1){if(library.current)await selectLibraryTrack(library.neighbor(direction));}
-function renderLibraryDialog(){
- $('libraryRows').replaceChildren();$('duplicateRows').replaceChildren();$('shuffle').checked=settings.shuffle;
- $('libraryStatus').textContent=library.tracks.length?`${library.tracks.length} unique ${library.tracks.length===1?'MP3':'MP3s'} · ${library.duplicates.length} exact duplicates skipped${library.errors.length?' · '+library.errors.length+' unreadable files':''}`:'No MP3s loaded. Choose a folder to get started.';
- library.tracks.forEach((track,index)=>{
-  const button=document.createElement('button');button.className='library-track';button.setAttribute('aria-label','Play '+track.file.name);button.setAttribute('aria-current',String(index===library.index));
-  const title=document.createElement('strong');title.textContent=`${index+1}. ${track.file.name}`;
-  const path=document.createElement('small');path.textContent=track.path;button.append(title,path);
-  button.addEventListener('click',async()=>{await selectLibraryTrack(index,true);if(!loadingTrack)$('libraryDialog').close();});$('libraryRows').append(button);
+function renderFilterButtons(id,options,selected,onToggle){
+ const box=$(id);box.replaceChildren();
+ const choices=[{key:'all',label:'All'},...options];
+ choices.forEach(({key,label})=>{
+  const button=document.createElement('button');button.type='button';button.textContent=label;button.className='filter-chip';
+  const active=key==='all'?selected.length===0:selected.includes(key);button.classList.toggle('selected',active);button.setAttribute('aria-pressed',String(active));
+  button.addEventListener('click',()=>onToggle(key));box.append(button);
  });
- $('duplicateDetails').hidden=library.duplicates.length===0;$('duplicateSummary').textContent=`${library.duplicates.length} duplicate files skipped`;
- library.duplicates.forEach(d=>{const li=document.createElement('li');li.textContent=`${d.path} — keep ${d.keptPath}`;$('duplicateRows').append(li);});
- library.errors.forEach(d=>{const p=document.createElement('p');p.className='library-warning';p.textContent=`Could not read ${d.path}: ${d.message}`;$('libraryRows').append(p);});
 }
-function openLibrary(){renderLibraryDialog();if(!$('libraryDialog').open)$('libraryDialog').showModal();}
+function toggleDraft(group,key){
+ let values=group==='genres'?draftGenres:draftEffects;
+ values=key==='all'?[]:values.includes(key)?values.filter(x=>x!==key):[...values,key];
+ if(group==='genres')draftGenres=values;else draftEffects=values;renderLibraryDialog();
+}
+function renderLibraryDialog(){
+ $('libraryRows').replaceChildren();$('shuffle').checked=settings.shuffle;
+ const matches=filterMp3Tracks(library.allTracks,draftGenres,draftEffects);
+ $('libraryStatus').textContent=library.allTracks.length?`${library.allTracks.length} MP3s loaded · ${matches.length} match this combination`:'Choose a folder, or use + to select MP3 files.';
+ $('filterPreview').textContent=`${matches.length} matching ${matches.length===1?'track':'tracks'}`;
+ const genreOptions=[...MUSIC_GENRES];if(library.allTracks.some(t=>!t.genres.length)||draftGenres.includes('unknown'))genreOptions.push({key:'unknown',label:'Unlabeled'});
+ renderFilterButtons('genreFilters',genreOptions,draftGenres,key=>toggleDraft('genres',key));
+ renderFilterButtons('effectFilters',MUSIC_EFFECTS,draftEffects,key=>toggleDraft('effects',key));
+ const unknown=library.allTracks.filter(t=>t.effect==='unknown').length;
+ $('unlabeledNote').textContent=unknown?`${unknown} ${unknown===1?'track has':'tracks have'} no effect label. They are available under All or Unlabeled; BPM is not used to guess an effect level.`:'Categories come from filenames or folders. No renaming is required for labeled tracks.';
+ matches.forEach(track=>{
+  const button=document.createElement('button');button.className='library-track';button.setAttribute('aria-label','Play '+track.title);button.setAttribute('aria-current',String(track.file===library.current?.file));
+  const title=document.createElement('strong');title.textContent=track.title;
+  const labels=document.createElement('small');labels.textContent=`${track.genres.map(genreLabel).join(', ')||'Unlabeled genre'} · ${effectLabel(track.effect)}${track.bpm?' · '+track.bpm+' BPM':''}`;
+  const path=document.createElement('small');path.textContent=track.path;button.append(title,labels,path);
+  button.addEventListener('click',async()=>{await applyMusicFilters(track.file,true);});$('libraryRows').append(button);
+ });
+ if(library.allTracks.length&&!matches.length){const p=document.createElement('p');p.className='library-warning';p.textContent='No tracks match this combination. Select All or choose another genre/effect.';$('libraryRows').append(p);}
+}
+function openLibrary(){draftGenres=[...settings.genres];draftEffects=[...settings.effects];renderLibraryDialog();if(!$('libraryDialog').open)$('libraryDialog').showModal();}
+async function applyMusicFilters(targetFile=null,start=false){
+ if(loadingTrack)return;const previous=library.current?.file;
+ settings.genres=[...draftGenres];settings.effects=[...draftEffects];library.setFilters(settings.genres,settings.effects);save();
+ if(!library.tracks.length){session.pause();await engine.pause();engine.clearFile();uploadName='';render();renderLibraryDialog();toast('No matching tracks. Adjust the filters to continue.');return;}
+ const next=targetFile?library.tracks.findIndex(t=>t.file===targetFile):library.index;
+ if(targetFile||library.current?.file!==previous||!engine.file)await selectLibraryTrack(Math.max(0,next),start);
+ else render();
+ $('libraryDialog').close();
+}
 $('folderBtn').addEventListener('click',()=>$('folderInput').click());$('pickLibraryFolder').addEventListener('click',()=>{$('libraryDialog').close();$('folderInput').click();});
 $('libraryBtn').addEventListener('click',openLibrary);$('closeLibrary').addEventListener('click',()=>$('libraryDialog').close());
-$('cancelScan').addEventListener('click',()=>scanController?.abort());
+$('applyFilters').addEventListener('click',()=>applyMusicFilters());$('clearFilters').addEventListener('click',()=>{draftGenres=[];draftEffects=[];renderLibraryDialog();});
 async function importMp3Folder(files){
- if(!files.length)return;
- if(scanController)scanController.abort();const controller=new AbortController();scanController=controller;
- openLibrary();$('scanProgress').hidden=false;$('scanProgress').value=0;$('cancelScan').hidden=false;$('folderBtn').disabled=true;$('pickLibraryFolder').disabled=true;
+ if(!files.length||importingLibrary)return;importingLibrary=true;$('folderBtn').disabled=true;$('uploadBtn').disabled=true;$('pickLibraryFolder').disabled=true;
  try{
-  const result=await scanMp3Files(files,{signal:controller.signal,onProgress:({done,total})=>{if(scanController!==controller)return;$('scanProgress').max=total||1;$('scanProgress').value=done;$('libraryStatus').textContent=`Checking MP3s: ${done} of ${total}`;}});
-  if(controller.signal.aborted||scanController!==controller)return;
-  if(!result.tracks.length){$('libraryStatus').textContent=result.total?'No readable MP3s were found. Your previous library is unchanged.':'No MP3s found in this folder. Quarantined duplicates are ignored.';return;}
-  $('cancelScan').hidden=true;library.load(result);library.setShuffle(settings.shuffle);const first=library.index;library.index=-1;await selectLibraryTrack(first);renderLibraryDialog();
-  toast(`${library.tracks.length} tracks ready. ${library.duplicates.length} exact duplicates skipped.`);
- }catch(error){$('libraryStatus').textContent=error.name==='AbortError'?'Scan cancelled. Your previous library is unchanged.':error.message;}
- finally{if(scanController===controller){scanController=null;$('scanProgress').hidden=true;$('cancelScan').hidden=true;$('folderBtn').disabled=false;$('pickLibraryFolder').disabled=false;}}
+  const result=indexMp3Files(files);
+  if(!result.tracks.length){toast('No MP3s found. Choose your music folder or MP3 files.');return;}
+  library.load(result);library.setShuffle(settings.shuffle);
+  if(library.tracks.length){const first=library.index;library.index=-1;await selectLibraryTrack(first);}
+  else{session.pause();await engine.pause();engine.clearFile();uploadName='';render();}
+  openLibrary();toast(`${library.allTracks.length} MP3s loaded. Choose genres and effect levels to tailor your playlist.`);
+ }catch(error){toast(error.message||'The folder could not be loaded.');}
+ finally{importingLibrary=false;$('folderBtn').disabled=false;$('uploadBtn').disabled=false;$('pickLibraryFolder').disabled=false;}
 }
 $('folderInput').addEventListener('change',async event=>{const files=Array.from(event.target.files||[]);event.target.value='';await importMp3Folder(files);});
 $('shuffle').addEventListener('change',event=>{settings.shuffle=event.target.checked;library.setShuffle(settings.shuffle);save();});
 $('trackSeek').addEventListener('input',event=>{if(engine.file&&Number.isFinite(engine.file.duration)&&engine.file.duration>0){engine.file.currentTime=Number(event.target.value)/1000*engine.file.duration;updateTrackPosition();}});
-$('duplicateReport').addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([duplicateCsv(library.duplicates)],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='Still-Duplicate-MP3s.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 
 async function tick(){
  const snap=session.snapshot();
