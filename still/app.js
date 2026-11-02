@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const engine=new FocusAudio();
 const presets={study:{title:'Quiet Current',description:'Warm keys drifting through a soft, textured haze.',category:'01',music:65,texture:30,pulse:12,rate:16,textureType:'brown'},work:{title:'Forward Motion',description:'A steady undercurrent for the things that need your attention.',category:'02',music:75,texture:20,pulse:25,rate:16,textureType:'rain'},reading:{title:'Open Pages',description:'Soft, spacious tones with room for every word.',category:'03',music:40,texture:40,pulse:0,rate:12,textureType:'pink'}};
-let settings={preset:'study',music:65,texture:30,pulse:12,rate:16,textureType:'brown',volume:45,minutes:25,timerMode:'pomodoro'};
+let settings={preset:'study',music:65,texture:30,pulse:12,rate:16,textureType:'brown',volume:45,minutes:25,timerMode:'pomodoro',theme:'amber'};
 let history=[];
 try{const saved=JSON.parse(localStorage.getItem('still-settings')||'null');if(saved&&typeof saved==='object'){
 for(const k of ['music','texture','volume'])if(Number.isFinite(saved[k]))settings[k]=Math.max(0,Math.min(100,saved[k]));
@@ -10,6 +10,7 @@ if(Number.isFinite(saved.pulse))settings.pulse=Math.max(0,Math.min(50,saved.puls
 if([8,12,16,20].includes(saved.rate))settings.rate=saved.rate;
 if([0,25,50,90].includes(saved.minutes))settings.minutes=saved.minutes;
 if(['pomodoro','single'].includes(saved.timerMode))settings.timerMode=saved.timerMode;
+if(['amber','clay','rose'].includes(saved.theme))settings.theme=saved.theme;
 if(presets[saved.preset])settings.preset=saved.preset;
 if(['brown','pink','rain'].includes(saved.textureType))settings.textureType=saved.textureType;
 }const h=JSON.parse(localStorage.getItem('still-history')||'[]');if(Array.isArray(h))history=h;}catch{}
@@ -28,6 +29,7 @@ function syncSound(){
 function setBusy(value){busy=value;$('playBtn').disabled=value;$('timerPlayBtn').disabled=value;}
 function handleAudioError(error){session.pause();render();toast(error.message||'Audio could not resume. Press Resume to try again.');}
 
+function applyTheme(){document.documentElement.dataset.theme=settings.theme;$('theme').value=settings.theme;}
 function setSelected(selector,attribute,value){document.querySelectorAll(selector).forEach(b=>{const selected=b.dataset[attribute]===String(value);b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});}
 function render(){
 const p=presets[settings.preset];$('crumb').textContent=settings.preset==='work'?'DEEP WORK':settings.preset.toUpperCase();$('mixTag').textContent=(settings.preset==='work'?'WORK':settings.preset.toUpperCase())+' MIX';
@@ -84,6 +86,7 @@ document.querySelectorAll('[data-timer-mode]').forEach(b=>b.addEventListener('cl
  try{await syncSound();}catch(error){handleAudioError(error);}
  toast(settings.timerMode==='pomodoro'?'Pomodoro mode. Focus and break cycles repeat automatically.':'Single session mode. Audio stops when the timer ends.');
 }));
+$('theme').addEventListener('change',e=>{settings.theme=e.target.value;applyTheme();save();});
 $('uploadBtn').addEventListener('click',()=>$('fileInput').click());
 $('fileInput').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;$('uploadBtn').disabled=true;toast('Opening your audio…');try{await engine.setFile(file);uploadName=file.name;render();toast('Your track is ready. It will loop through your session.');}catch(error){if(!engine.file)uploadName='';toast(error.message||'Unable to play that audio file.');render();}finally{$('uploadBtn').disabled=false;e.target.value='';}});
 $('removeFile').addEventListener('click',()=>{engine.clearFile();uploadName='';engine.variation();render();toast('Back to your generative soundscape.');});
@@ -114,4 +117,4 @@ setInterval(tick,250);document.addEventListener('visibilitychange',()=>{if(!docu
 // The Media Session API makes keyboard and lock-screen controls usable where supported.
 if('mediaSession' in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:'Still — Focus Studio',artist:'Your personal soundscape'});navigator.mediaSession.setActionHandler('play',()=>{if(!session.running)toggle();});navigator.mediaSession.setActionHandler('pause',()=>{if(session.running)toggle();});}catch{}}
 const canvas=$('waves'),ctx=canvas.getContext('2d');let frame=0;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function draw(){const w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,2);if(canvas.width!==w*dpr||canvas.height!==h*dpr){canvas.width=w*dpr;canvas.height=h*dpr;}ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);if(session.running&&session.snapshot().phase==='focus')frame+=.012;for(let j=0;j<3;j++){ctx.beginPath();ctx.strokeStyle=`rgba(171,189,130,${.11-j*.025})`;ctx.lineWidth=.7;for(let x=0;x<w;x++){const envelope=Math.sin(x/w*Math.PI);const y=h*.53+Math.sin(x*.024+frame+j*.6)*envelope*(13+j*9);x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();}if(!reduced)requestAnimationFrame(draw);}draw();engine.apply(settings);render();
+function draw(){const w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,2);if(canvas.width!==w*dpr||canvas.height!==h*dpr){canvas.width=w*dpr;canvas.height=h*dpr;}ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);if(session.running&&session.snapshot().phase==='focus')frame+=.012;for(let j=0;j<3;j++){ctx.beginPath();ctx.strokeStyle=`rgba(200,145,105,${.11-j*.025})`;ctx.lineWidth=.7;for(let x=0;x<w;x++){const envelope=Math.sin(x/w*Math.PI);const y=h*.53+Math.sin(x*.024+frame+j*.6)*envelope*(13+j*9);x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();}if(!reduced)requestAnimationFrame(draw);}applyTheme();draw();engine.apply(settings);render();
