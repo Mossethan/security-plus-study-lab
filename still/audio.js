@@ -1,6 +1,6 @@
 'use strict';
 class FocusAudio {
-  constructor() { this.ctx=null; this.nodes=[]; this.voices=[]; this.nextNote=0; this.step=0; this.seed=Math.floor(Math.random()*10000); this.file=null; this.fileUrl=null; this.fileRequest=0; this.active=false; this.settings={music:65,texture:30,pulse:12,rate:16,volume:45,textureType:'brown',preset:'study'}; }
+  constructor() { this.ctx=null; this.nodes=[]; this.voices=[]; this.nextNote=0; this.step=0; this.seed=Math.floor(Math.random()*10000); this.file=null; this.fileUrl=null; this.fileRequest=0; this.playbackRequest=0; this.active=false; this.settings={music:65,texture:30,pulse:12,rate:16,volume:45,textureType:'brown',preset:'study'}; }
   random(){this.seed=(this.seed*1664525+1013904223)>>>0;return this.seed/4294967296;}
   init(){
     if(this.ctx)return;
@@ -69,15 +69,23 @@ class FocusAudio {
     }
   }
   async play(){
-    this.init();await this.ctx.resume();
+    ++this.playbackRequest;this.init();await this.ctx.resume();this.holdMasterGain();
     if(this.file){try{await this.file.play();}catch(e){throw new Error('That file could not play. Choose a supported MP3, WAV, or M4A file.');}}
     this.active=true;this.apply(this.settings);this.schedule();
     if(!this.scheduler)this.scheduler=setInterval(()=>this.schedule(),1000);
   }
+  holdMasterGain(){
+    const gain=this.master.gain,now=this.ctx.currentTime;
+    if(typeof gain.cancelAndHoldAtTime==='function')gain.cancelAndHoldAtTime(now);
+    else{const current=gain.value;gain.cancelScheduledValues(now);gain.setValueAtTime(current,now);}
+  }
   async pause(){
-    this.active=false;if(!this.ctx)return;this.smooth(this.master.gain,0,.08);if(this.file)this.file.pause();
-    // Suspend on the next tick; recheck state to avoid racing a quick resume.
-    await new Promise(resolve=>setTimeout(resolve,450));if(!this.active)await this.ctx.suspend();
+    const request=++this.playbackRequest;this.active=false;if(!this.ctx)return;
+    this.holdMasterGain();this.master.gain.linearRampToValueAtTime(0,this.ctx.currentTime+1.5);
+    // Keep the MP3 running through the fade, then freeze its playback position.
+    await new Promise(resolve=>setTimeout(resolve,1550));
+    if(request!==this.playbackRequest||this.active)return;
+    if(this.file)this.file.pause();await this.ctx.suspend();
   }
   async setFile(file,{loop=true,onEnded=null,autoplay=true}={}){
     const request=++this.fileRequest;
@@ -89,6 +97,6 @@ class FocusAudio {
     if(this.active)await this.file.play();return true;
   }
   attachFile(){this.fileSource=this.ctx.createMediaElementSource(this.file);this.fileSource.connect(this.pulseGain);}
-  clearFile(cancelPending=true){if(cancelPending)this.fileRequest++;if(this.file){this.file.onended=null;this.file.pause();this.file.removeAttribute('src');this.file.load();this.file=null;}if(this.fileSource){this.fileSource.disconnect();this.fileSource=null;}if(this.fileUrl){URL.revokeObjectURL(this.fileUrl);this.fileUrl=null;}if(this.ctx)this.smooth(this.synthGain.gain,1,.5);}
+  clearFile(cancelPending=true){++this.playbackRequest;if(cancelPending)this.fileRequest++;if(this.file){this.file.onended=null;this.file.pause();this.file.removeAttribute('src');this.file.load();this.file=null;}if(this.fileSource){this.fileSource.disconnect();this.fileSource=null;}if(this.fileUrl){URL.revokeObjectURL(this.fileUrl);this.fileUrl=null;}if(this.ctx)this.smooth(this.synthGain.gain,1,.5);}
   variation(){this.seed=Math.floor(Math.random()*100000);if(!this.ctx)return;this.voices.forEach(v=>{this.smooth(v.g.gain,.0001,.3);try{v.o.stop(this.ctx.currentTime+2);}catch{}});this.nextNote=this.ctx.currentTime+.1;this.step=Math.floor(this.random()*4)*4;if(this.active)this.schedule();}
 }

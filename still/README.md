@@ -11,7 +11,7 @@ A personal sound player for studying and working. Buildless HTML, CSS and JavaSc
 - Sticky timer controls with pause/resume, reset, skip break, current round, and completed-cycle count. A Pomodoro cycle is counted only after both focus and its full break finish; skipped breaks do not count. The count covers the current timer run and resets when the timer is reset, the duration or mode changes, or the page reloads. Wall-clock timing catches up after background throttling.
 - Timer mode, settings, and a bounded completed-focus-round log in browser local storage.
 
-Audio starts after a user gesture. Keep the page open while listening; mobile operating systems may suspend browser audio when locked. Imported files stay in memory on the device and must be chosen again after a reload. Settings and history do not sync between browsers.
+Pause fades all sound out over 1.5 seconds before pausing the MP3 and suspending audio; resuming cancels any pending pause transition. Audio starts after a user gesture. Keep the page open while listening; mobile operating systems may suspend browser audio when locked. Imported files stay in memory on the device and must be chosen again after a reload. Settings and history do not sync between browsers.
 
 This is an original experimental focus sound tool. The pulse rate describes amplitude modulation, not the audio's pitch. No particular pulse setting is claimed to improve cognition.
 

@@ -1,7 +1,7 @@
 const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const media=[],revoked=[];let nextUrl=0;
+const media=[],revoked=[],fadeTimers=[];let nextUrl=0;
 class Media{constructor(){this.events={};this.paused=true;media.push(this);}set src(value){this.url=value;}addEventListener(name,fn){this.events[name]=fn;}emit(name){this.events[name]?.({});}pause(){this.paused=true;}async play(){this.paused=false;}removeAttribute(){}load(){}}
-const context={Audio:Media,window:{AudioContext:function(){}},URL:{createObjectURL:()=>`blob:${++nextUrl}`,revokeObjectURL:u=>revoked.push(u)},setTimeout,clearTimeout,setInterval,Math,Promise};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../audio.js'),'utf8')+'\nthis.engine=new FocusAudio();',context);
+const context={Audio:Media,window:{AudioContext:function(){}},URL:{createObjectURL:()=>`blob:${++nextUrl}`,revokeObjectURL:u=>revoked.push(u)},setTimeout:(fn,ms)=>ms===1550?fadeTimers.push(fn):setTimeout(fn,ms),clearTimeout,setInterval,Math,Promise};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../audio.js'),'utf8')+'\nthis.engine=new FocusAudio();',context);
 (async()=>{
  const e=context.engine;let ended=0;
  const first=e.setFile({}, {loop:false,autoplay:false,onEnded:()=>ended++});media[0].emit('loadedmetadata');assert.equal(await first,true);assert.equal(e.file.loop,false);e.file.onended();assert.equal(ended,1);assert.equal(e.file.paused,true);
@@ -11,5 +11,14 @@ const context={Audio:Media,window:{AudioContext:function(){}},URL:{createObjectU
  const bad=e.setFile({});media[5].emit('error');await assert.rejects(bad,/could not be read/);assert.ok(revoked.includes('blob:6'));
  const ramps=[];e.ctx={currentTime:0};e.master={gain:{}};e.synthGain={gain:{}};e.smooth=(param,value)=>ramps.push({param,value});e.attachFile=()=>{};e.active=true;
  const muted=e.setFile({}, {autoplay:false});media[6].emit('loadedmetadata');await muted;assert.equal(e.active,false);assert.ok(ramps.some(r=>r.param===e.master.gain&&r.value===0));
- console.log('Audio-file checks passed: playlist end callbacks, repeat-one playback, stale-load cancellation, pending-load removal, object-URL cleanup, and invalid-file errors.');
+ const fading=vm.runInContext('new FocusAudio()',context),automation=[];let suspends=0;
+ fading.ctx={currentTime:12,resume:async()=>{},suspend:async()=>{suspends++;}};
+ fading.master={gain:{value:.4,cancelAndHoldAtTime:t=>automation.push(['hold',t]),linearRampToValueAtTime:(value,t)=>automation.push(['ramp',value,t])}};
+ fading.init=()=>{};fading.apply=()=>{};fading.schedule=()=>{};fading.scheduler=1;fading.file=new Media();await fading.play();
+ const pause=fading.pause();assert.equal(fading.active,false);assert.equal(fading.file.paused,false);assert.equal(suspends,0);assert.deepEqual(automation.at(-1),['ramp',0,13.5]);
+ fadeTimers.shift()();await pause;assert.equal(fading.file.paused,true);assert.equal(suspends,1);
+ await fading.play();const interrupted=fading.pause();await fading.play();fadeTimers.shift()();await interrupted;assert.equal(fading.file.paused,false);assert.equal(suspends,1);assert.equal(fading.active,true);
+ const oldPause=fading.pause(),newPause=fading.pause();fadeTimers.shift()();await oldPause;assert.equal(suspends,1);assert.equal(fading.file.paused,false);fadeTimers.shift()();await newPause;assert.equal(suspends,2);
+ const fallback=[];fading.master.gain={value:.2,cancelScheduledValues:t=>fallback.push(['cancel',t]),setValueAtTime:(v,t)=>fallback.push(['set',v,t])};fading.holdMasterGain();assert.deepEqual(fallback,[['cancel',12],['set',.2,12]]);
+ console.log('Audio-file checks passed: 1.5-second pause ramp, delayed MP3 pause/suspend, resume and overlapping-pause cancellation, gain fallback, playlist end callbacks, repeat-one playback, stale-load cancellation, object-URL cleanup, and invalid-file errors.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
