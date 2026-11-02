@@ -10,15 +10,17 @@ class FocusAudio {
     this.master=c.createGain();this.master.gain.value=0;
     this.limiter=c.createDynamicsCompressor();this.limiter.threshold.value=-18;this.limiter.knee.value=18;this.limiter.ratio.value=5;this.limiter.attack.value=.015;this.limiter.release.value=.3;
     this.master.connect(this.limiter).connect(c.destination);
-    this.musicGain=c.createGain();this.musicGain.connect(this.master);
-    this.pulseGain=c.createGain();this.pulseGain.connect(this.musicGain);
+    this.musicGain=c.createGain();
+    this.pulseGain=c.createGain();this.pulseGain.connect(this.master);this.musicGain.connect(this.pulseGain);
+    // Imported music bypasses the optional generated-music volume control.
+    this.fileGain=c.createGain();this.fileGain.gain.value=.65;this.fileGain.connect(this.pulseGain);
     this.pulseOsc=c.createOscillator();this.pulseOsc.type='sine';this.pulseDepth=c.createGain();this.pulseOsc.connect(this.pulseDepth).connect(this.pulseGain.gain);this.pulseOsc.start();
-    this.synthGain=c.createGain();this.synthGain.gain.value=this.file?0:1;
-    this.tone=c.createBiquadFilter();this.tone.type='lowpass';this.tone.Q.value=.3;this.synthGain.connect(this.tone).connect(this.pulseGain);
+    this.synthGain=c.createGain();this.synthGain.gain.value=1;
+    this.tone=c.createBiquadFilter();this.tone.type='lowpass';this.tone.Q.value=.3;this.synthGain.connect(this.tone).connect(this.musicGain);
     // Short, diffuse, stereo reverb: no downloaded audio and no obvious repeat.
     this.reverb=c.createConvolver();const impulse=c.createBuffer(2,c.sampleRate*3,c.sampleRate);
     for(let ch=0;ch<2;ch++){const data=impulse.getChannelData(ch);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,3)*.35;}
-    this.reverb.buffer=impulse;this.wet=c.createGain();this.wet.gain.value=.36;this.synthGain.connect(this.reverb).connect(this.wet).connect(this.pulseGain);
+    this.reverb.buffer=impulse;this.wet=c.createGain();this.wet.gain.value=.36;this.synthGain.connect(this.reverb).connect(this.wet).connect(this.musicGain);
     this.noiseGain=c.createGain();this.noiseGain.connect(this.master);this.noises={};
     ['brown','pink','rain'].forEach(kind=>{
       const length=c.sampleRate*17, buffer=c.createBuffer(2,length,c.sampleRate);
@@ -93,10 +95,10 @@ class FocusAudio {
     const url=URL.createObjectURL(file),candidate=new Audio();candidate.loop=loop;candidate.preload='metadata';candidate.src=url;
     try{await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error('Audio load timed out.')),15000);candidate.addEventListener('loadedmetadata',()=>{clearTimeout(timeout);resolve();},{once:true});candidate.addEventListener('error',error=>{clearTimeout(timeout);reject(error);},{once:true});});}catch(e){URL.revokeObjectURL(url);throw new Error('This file could not be read. Try an MP3, WAV, or M4A audio file.');}
     if(request!==this.fileRequest){candidate.removeAttribute('src');candidate.load();URL.revokeObjectURL(url);return false;}
-    this.clearFile(false);this.file=candidate;this.fileUrl=url;candidate.onended=onEnded;if(!autoplay){this.active=false;if(this.ctx)this.smooth(this.master.gain,0,.08);}if(this.ctx){this.attachFile();this.smooth(this.synthGain.gain,0,.2);}
+    this.clearFile(false);this.file=candidate;this.fileUrl=url;candidate.onended=onEnded;if(!autoplay){this.active=false;if(this.ctx)this.smooth(this.master.gain,0,.08);}if(this.ctx)this.attachFile();
     if(this.active)await this.file.play();return true;
   }
-  attachFile(){this.fileSource=this.ctx.createMediaElementSource(this.file);this.fileSource.connect(this.pulseGain);}
+  attachFile(){this.fileSource=this.ctx.createMediaElementSource(this.file);this.fileSource.connect(this.fileGain);}
   clearFile(cancelPending=true){++this.playbackRequest;if(cancelPending)this.fileRequest++;if(this.file){this.file.onended=null;this.file.pause();this.file.removeAttribute('src');this.file.load();this.file=null;}if(this.fileSource){this.fileSource.disconnect();this.fileSource=null;}if(this.fileUrl){URL.revokeObjectURL(this.fileUrl);this.fileUrl=null;}if(this.ctx)this.smooth(this.synthGain.gain,1,.5);}
   variation(){this.seed=Math.floor(Math.random()*100000);if(!this.ctx)return;this.voices.forEach(v=>{this.smooth(v.g.gain,.0001,.3);try{v.o.stop(this.ctx.currentTime+2);}catch{}});this.nextNote=this.ctx.currentTime+.1;this.step=Math.floor(this.random()*4)*4;if(this.active)this.schedule();}
 }

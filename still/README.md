@@ -36,6 +36,8 @@ Supported genres: Acoustic, Atmospheric, Cinematic, Classical, Drone, Electronic
 
 Legacy exports with a genre immediately before Focus or Deep Work are also recognized (for example, The Chase Cinematic Focus Deep Work becomes The Chase / Cinematic). Genre labels after Deep Work take priority. Production-template names without recognizable labels stay unclassified; put these in a genre and effect folder after confirming their categories, such as Music/Low effect/Electronic/. No category is guessed from sound, tempo, or production notes.
 
+Imported music starts with generated ambient music, background texture, and rhythmic pulse at zero. Raise their sliders to add them back; these choices stay in place across track changes, filtering, pause/resume, and preset changes. Choosing a new file/folder starts with those sounds off again. Removing the imported music restores the generative mix; temporary imported-file mix levels do not overwrite its saved settings. Master volume controls the imported track independently of the Ambient music slider.
+
 Use the player controls for previous/next track, play/pause, seeking, and automatic track advancement. Shuffle is limited to matching tracks. The playlist repeats at the end. Both timer modes remain available. The + button accepts one repeating audio file or multiple MP3s as a library.
 
 Duplicate cleanup remains separate in tools/MP3-Cleanup and the existing downloadable ZIP. The utility quarantines exact duplicates with a restorable manifest, without permanently deleting or overwriting files. Native Windows execution has not been verified in this Linux environment.

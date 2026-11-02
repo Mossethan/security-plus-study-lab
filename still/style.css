@@ -34,3 +34,15 @@ dialog{border:1px solid var(--accent-border);border-radius:16px;background:var(-
 @media(max-width:760px){.music-filters legend small{display:block;margin:5px 0 0}.filter-chip{font-size:13px;padding:8px 10px}.library-rows{max-height:26vh}}
 
 .timer-readout .cycle-count{font-size:13px;line-height:1.4;letter-spacing:0;color:var(--accent);white-space:nowrap}
+
+/* Keep the entire globe and its decoration inside its own player row. */
+.has-library .orb-stage{--orb-size:clamp(135px,18vh,175px);height:clamp(180px,23vh,220px);margin-bottom:12px;overflow:hidden}
+.has-library .orb{width:var(--orb-size);height:var(--orb-size)}
+.has-library .orbit-one{width:calc(var(--orb-size)*1.25);height:calc(var(--orb-size)*1.25)}
+.has-library .orbit-two{width:calc(var(--orb-size)*1.4);height:calc(var(--orb-size)*1.4)}
+.has-library .track-heading{position:relative;min-width:0}
+.has-library .track-heading h2{white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+@media(max-width:760px){.has-library .orb-stage{--orb-size:150px;height:190px;margin-bottom:12px}}
+
+.studio,.mixer{min-width:0}
+@media(max-width:760px){.studio{grid-template-columns:minmax(0,1fr)}.orb-stage{width:100%}}

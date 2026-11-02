@@ -18,12 +18,17 @@ if(presets[saved.preset])settings.preset=saved.preset;
 if(['brown','pink','rain'].includes(saved.textureType))settings.textureType=saved.textureType;
 }const h=JSON.parse(localStorage.getItem('still-history')||'[]');if(Array.isArray(h))history=h;}catch{}
 const library=new MP3Library();library.shuffle=settings.shuffle;library.setFilters(settings.genres,settings.effects);
-let loadingTrack=false,importingLibrary=false,draftGenres=[],draftEffects=[];
+let loadingTrack=false,importingLibrary=false,draftGenres=[],draftEffects=[],fileMixBase=null;
 const previousIcon=$('resetBtn').innerHTML,nextIcon=$('newBtn').innerHTML;
 const session=new PomodoroSession(settings.minutes,settings.timerMode==='pomodoro');
 let busy=false,variation=1,uploadName='',toastTimeout,reportedFocus=0,lastPhase='focus';
 let soundQueue=Promise.resolve();
-const save=()=>{try{localStorage.setItem('still-settings',JSON.stringify(settings));}catch{$('savedStatus').textContent='Settings could not be saved in this browser';}};
+const save=()=>{try{localStorage.setItem('still-settings',JSON.stringify({...settings,...fileMixBase}));}catch{$('savedStatus').textContent='Settings could not be saved in this browser';}};
+function beginFileMix(){
+ if(!fileMixBase)fileMixBase={music:settings.music,texture:settings.texture,pulse:settings.pulse};
+ settings.music=0;settings.texture=0;settings.pulse=0;engine.apply(settings);
+}
+function endFileMix(){if(fileMixBase){Object.assign(settings,fileMixBase);fileMixBase=null;engine.apply(settings);}}
 function toast(s){$('status').textContent=s;clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('status').textContent='',6500);}
 function syncSound(){
   soundQueue=soundQueue.catch(()=>{}).then(async()=>{
@@ -41,6 +46,8 @@ function setSelected(selector,attribute,value){document.querySelectorAll(selecto
 function render(){
 const p=presets[settings.preset];$('crumb').textContent=settings.preset==='work'?'DEEP WORK':settings.preset.toUpperCase();$('mixTag').textContent=(settings.preset==='work'?'WORK':settings.preset.toUpperCase())+' MIX';
 const current=library.current,hasLibrary=library.allTracks.length>0;
+ $('mixerHint').textContent=fileMixBase?'Other sounds start off. Add them with the sliders.':'A few small adjustments. Your kind of focus.';
+ $('musicDesc').textContent=fileMixBase?'Optional generated keys behind your track.':'Slowly evolving keys and warm, sustained tones.';
 $('trackTitle').textContent=noMatchingTracks()?'No matching tracks':current?current.title:uploadName?uploadName.replace(/\.[^.]+$/,''):p.title;$('trackTitle').title=uploadName;
 $('trackDesc').textContent=noMatchingTracks()?'Open Browse & filters to choose another combination.':current?`${current.genres.map(genreLabel).join(', ')||'Unlabeled genre'} · ${effectLabel(current.effect)}${current.bpm?' · '+current.bpm+' BPM':''} · ${library.index+1}/${library.tracks.length}`:uploadName||p.description;
 $('trackCategory').textContent=hasLibrary?'YOUR FILTERED MP3 LIBRARY':uploadName?'PERSONAL AUDIO · ON REPEAT':`GENERATIVE SOUNDSCAPE · ${p.category}`;
@@ -91,7 +98,7 @@ $('newBtn').addEventListener('click',()=>{if(library.current){changeTrack(1);ret
 for(const name of ['music','texture','pulse','volume'])$(name).addEventListener('input',e=>{settings[name]=Number(e.target.value);engine.apply(settings);save();render();});
 $('rate').addEventListener('change',e=>{settings.rate=Number(e.target.value);engine.apply(settings);save();render();});
 document.querySelectorAll('[data-texture]').forEach(b=>b.addEventListener('click',()=>{settings.textureType=b.dataset.texture;engine.apply(settings);save();render();}));
-document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{if(settings.preset===b.dataset.preset)return;settings={...settings,...presets[b.dataset.preset],preset:b.dataset.preset};engine.apply(settings);engine.variation();variation=1;save();render();}));
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{if(settings.preset===b.dataset.preset)return;const mix=fileMixBase?{music:settings.music,texture:settings.texture,pulse:settings.pulse,rate:settings.rate,textureType:settings.textureType}:{};settings={...settings,...presets[b.dataset.preset],...mix,preset:b.dataset.preset};if(fileMixBase){const p=presets[b.dataset.preset];fileMixBase={music:p.music,texture:p.texture,pulse:p.pulse};}engine.apply(settings);engine.variation();variation=1;save();render();}));
 document.querySelectorAll('[data-minutes]').forEach(b=>b.addEventListener('click',async()=>{if(busy)return;settings.minutes=Number(b.dataset.minutes);session.reset(settings.minutes);reportedFocus=0;lastPhase='focus';save();render();try{await syncSound();}catch(error){handleAudioError(error);}if(session.running)toast(settings.timerMode==='pomodoro'?'New focus/break cycle started.':'New single session started.');}));
 document.querySelectorAll('[data-timer-mode]').forEach(b=>b.addEventListener('click',async()=>{
  if(busy||settings.timerMode===b.dataset.timerMode)return;
@@ -101,8 +108,8 @@ document.querySelectorAll('[data-timer-mode]').forEach(b=>b.addEventListener('cl
 }));
 $('theme').addEventListener('change',e=>{settings.theme=e.target.value;applyTheme();save();});
 $('uploadBtn').addEventListener('click',()=>$('fileInput').click());
-$('fileInput').addEventListener('change',async e=>{const files=Array.from(e.target.files||[]);if(files.length>1){e.target.value='';await importMp3Folder(files);return;}const file=files[0];if(!file)return;$('uploadBtn').disabled=true;toast('Opening your audio…');try{const ready=await engine.setFile(file);if(!ready)return;library.clear();uploadName=file.name;bindTrackEvents();render();toast('Your track is ready. It will loop through your session.');}catch(error){if(!engine.file)uploadName='';toast(error.message||'Unable to play that audio file.');render();}finally{$('uploadBtn').disabled=false;e.target.value='';}});
-$('removeFile').addEventListener('click',()=>{library.clear();engine.clearFile();uploadName='';engine.variation();render();toast('Back to your generative soundscape.');});
+$('fileInput').addEventListener('change',async e=>{const files=Array.from(e.target.files||[]);if(files.length>1){e.target.value='';await importMp3Folder(files);return;}const file=files[0];if(!file)return;$('uploadBtn').disabled=true;toast('Opening your audio…');try{const ready=await engine.setFile(file,{autoplay:false});if(!ready)return;beginFileMix();library.clear();uploadName=file.name;bindTrackEvents();render();await syncSound();toast('Your track is ready. Other sounds are off; add them with the sliders.');}catch(error){if(!engine.file)uploadName='';toast(error.message||'Unable to play that audio file.');render();}finally{$('uploadBtn').disabled=false;e.target.value='';}});
+$('removeFile').addEventListener('click',()=>{library.clear();engine.clearFile();uploadName='';endFileMix();engine.variation();render();toast('Back to your generative soundscape.');});
 $('infoBtn').addEventListener('click',()=>{render();$('about').showModal();});$('closeAbout').addEventListener('click',()=>$('about').close());$('about').addEventListener('click',e=>{if(e.target===$('about')){const r=$('about').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('about').close();}});
 
 function audioTime(seconds){if(!Number.isFinite(seconds)||seconds<0)return '0:00';return `${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;}
@@ -126,10 +133,11 @@ function renderLibraryControls(){
  $('newBtn').innerHTML=hasLibrary?'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM6 5l9 7-9 7z"/></svg>':nextIcon;
  $('resetBtn').disabled=noMatchingTracks();$('newBtn').disabled=noMatchingTracks();$('playBtn').disabled=busy||noMatchingTracks();$('timerPlayBtn').disabled=busy||noMatchingTracks();
 }
-async function selectLibraryTrack(index,start=false){
+async function selectLibraryTrack(index,start=false,resetMix=false){
  if(loadingTrack)return;const track=library.tracks[index];if(!track)return;loadingTrack=true;
  try{
    const ready=await engine.setFile(track.file,{loop:false,autoplay:false,onEnded:()=>changeTrack(1)});if(!ready)return;
+   if(!fileMixBase||resetMix)beginFileMix();
    library.select(index);uploadName=track.file.name;bindTrackEvents();
    if(start&&session.snapshot().phase!=='break'){if(session.status==='complete')reportedFocus=0;session.start();}
    render();await syncSound();
@@ -189,7 +197,7 @@ async function importMp3Folder(files){
   const result=indexMp3Files(files);
   if(!result.tracks.length){toast('No MP3s found. Choose your music folder or MP3 files.');return;}
   library.load(result);library.setShuffle(settings.shuffle);
-  if(library.tracks.length){const first=library.index;library.index=-1;await selectLibraryTrack(first);}
+  if(library.tracks.length){const first=library.index;library.index=-1;await selectLibraryTrack(first,false,true);}
   else{session.pause();await engine.pause();engine.clearFile();uploadName='';render();}
   openLibrary();toast(`${library.allTracks.length} MP3s loaded. Choose genres and effect levels to tailor your playlist.`);
  }catch(error){toast(error.message||'The folder could not be loaded.');}
