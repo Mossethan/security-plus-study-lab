@@ -71,3 +71,9 @@ header{height:64px}
  .studio{padding-top:22px}.transport{column-gap:15px}
 }
 [hidden]{display:none!important}
+
+/* Timer mode is independent of the selected duration. */
+.timer-mode{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.timer-mode button{font-size:12px;line-height:1.2;border:1px solid #445543;border-radius:5px;background:transparent;color:#b5c3aa;padding:7px 9px}
+.timer-mode button.selected{background:#344733;border-color:#6d7a50;color:#e0ebc6}
+@media(max-width:650px){.timer-mode button{font-size:11px;padding:6px 7px}.timer-mode{gap:3px;margin-top:7px}.session-title p{margin-top:7px}}
