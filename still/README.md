@@ -7,8 +7,9 @@ A personal sound player for studying and working. Buildless HTML, CSS and JavaSc
 - Synthesized brown noise, pink noise, and a rain-like texture.
 - Adjustable amplitude modulation: 0–50% depth, 8/12/16/20 Hz rate.
 - Local audio-file playback through the same music/pulse mixer, with looping.
-- Pause/resume and 25/50/90-minute or unlimited sessions. Session end fades audio out.
-- Settings and a bounded completed-session log in browser local storage.
+- Repeating Pomodoro cycles: 25/5, 50/10, and 90/15 minutes, plus unlimited sessions. Audio fades out for breaks and resumes for focus.
+- Sticky timer controls with pause/resume, reset, skip break, and round count. Wall-clock timing catches up after background throttling.
+- Settings and a bounded completed-focus-round log in browser local storage.
 
 Audio starts after a user gesture. Keep the page open while listening; mobile operating systems may suspend browser audio when locked. Imported files stay in memory on the device and must be chosen again after a reload. Settings and history do not sync between browsers.
 
