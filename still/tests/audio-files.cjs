@@ -9,5 +9,7 @@ const context={Audio:Media,window:{AudioContext:function(){}},URL:{createObjectU
  const slow=e.setFile({}),fast=e.setFile({});media[3].emit('loadedmetadata');await fast;media[2].emit('loadedmetadata');assert.equal(await slow,false);assert.equal(e.file,media[3]);assert.ok(revoked.includes('blob:3'));
  const pending=e.setFile({});e.clearFile();media[4].emit('loadedmetadata');assert.equal(await pending,false);assert.equal(e.file,null);
  const bad=e.setFile({});media[5].emit('error');await assert.rejects(bad,/could not be read/);assert.ok(revoked.includes('blob:6'));
+ const ramps=[];e.ctx={currentTime:0};e.master={gain:{}};e.synthGain={gain:{}};e.smooth=(param,value)=>ramps.push({param,value});e.attachFile=()=>{};e.active=true;
+ const muted=e.setFile({}, {autoplay:false});media[6].emit('loadedmetadata');await muted;assert.equal(e.active,false);assert.ok(ramps.some(r=>r.param===e.master.gain&&r.value===0));
  console.log('Audio-file checks passed: playlist end callbacks, repeat-one playback, stale-load cancellation, pending-load removal, object-URL cleanup, and invalid-file errors.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

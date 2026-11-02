@@ -85,7 +85,7 @@ class FocusAudio {
     const url=URL.createObjectURL(file),candidate=new Audio();candidate.loop=loop;candidate.preload='metadata';candidate.src=url;
     try{await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error('Audio load timed out.')),15000);candidate.addEventListener('loadedmetadata',()=>{clearTimeout(timeout);resolve();},{once:true});candidate.addEventListener('error',error=>{clearTimeout(timeout);reject(error);},{once:true});});}catch(e){URL.revokeObjectURL(url);throw new Error('This file could not be read. Try an MP3, WAV, or M4A audio file.');}
     if(request!==this.fileRequest){candidate.removeAttribute('src');candidate.load();URL.revokeObjectURL(url);return false;}
-    this.clearFile(false);this.file=candidate;this.fileUrl=url;candidate.onended=onEnded;if(!autoplay)this.active=false;if(this.ctx){this.attachFile();this.smooth(this.synthGain.gain,0,.2);}
+    this.clearFile(false);this.file=candidate;this.fileUrl=url;candidate.onended=onEnded;if(!autoplay){this.active=false;if(this.ctx)this.smooth(this.master.gain,0,.08);}if(this.ctx){this.attachFile();this.smooth(this.synthGain.gain,0,.2);}
     if(this.active)await this.file.play();return true;
   }
   attachFile(){this.fileSource=this.ctx.createMediaElementSource(this.file);this.fileSource.connect(this.pulseGain);}

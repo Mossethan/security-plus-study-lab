@@ -27,7 +27,7 @@ function syncSound(){
   soundQueue=soundQueue.catch(()=>{}).then(async()=>{
     const shouldPlay=session.running&&session.snapshot().phase==='focus';
     if(shouldPlay&&!engine.active)await engine.play();
-    else if(!shouldPlay&&engine.active)await engine.pause();
+    else if(!shouldPlay&&(engine.active||engine.ctx?.state==='running'))await engine.pause();
   });return soundQueue;
 }
 function setBusy(value){busy=value;$('playBtn').disabled=value;$('timerPlayBtn').disabled=value;}
