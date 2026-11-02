@@ -9,7 +9,9 @@ class FocusAudio {
     this.ctx=new AC(); const c=this.ctx;
     this.master=c.createGain();this.master.gain.value=0;
     this.limiter=c.createDynamicsCompressor();this.limiter.threshold.value=-18;this.limiter.knee.value=18;this.limiter.ratio.value=5;this.limiter.attack.value=.015;this.limiter.release.value=.3;
-    this.master.connect(this.limiter).connect(c.destination);
+    // Fade after the compressor so its gain compensation cannot fight the fade.
+    this.output=c.createGain();this.output.gain.value=0;this.outputFade={from:0,to:0,start:c.currentTime,duration:0};
+    this.master.connect(this.limiter).connect(this.output).connect(c.destination);
     this.musicGain=c.createGain();
     this.pulseGain=c.createGain();this.pulseGain.connect(this.master);this.musicGain.connect(this.pulseGain);
     // Imported music bypasses the optional generated-music volume control.
@@ -48,7 +50,7 @@ class FocusAudio {
     this.smooth(this.noiseGain.gain,s.texture/100*.33);
     const depth=s.pulse/100;this.smooth(this.pulseGain.gain,1-depth/2);this.smooth(this.pulseDepth.gain,depth/2);this.smooth(this.pulseOsc.frequency,s.rate,.3);
     this.smooth(this.tone.frequency,s.preset==='reading'?950:s.preset==='work'?1900:1400,1);
-    this.smooth(this.master.gain,this.active?s.volume/100*.65:0);
+    this.smooth(this.master.gain,this.active||this.pausing?s.volume/100*.65:0);
     Object.entries(this.noises).forEach(([kind,node])=>this.smooth(node.gain,kind===s.textureType?1:0,.5));
   }
   note(freq,start,duration,gain,pan=0,type='sine'){
@@ -71,22 +73,33 @@ class FocusAudio {
     }
   }
   async play(){
-    ++this.playbackRequest;this.init();await this.ctx.resume();this.holdMasterGain();
+    ++this.playbackRequest;this.pausing=false;this.init();await this.ctx.resume();
     if(this.file){try{await this.file.play();}catch(e){throw new Error('That file could not play. Choose a supported MP3, WAV, or M4A file.');}}
-    this.active=true;this.apply(this.settings);this.schedule();
+    this.active=true;this.apply(this.settings);this.fadeOutput(1,.3);this.schedule();
     if(!this.scheduler)this.scheduler=setInterval(()=>this.schedule(),1000);
   }
-  holdMasterGain(){
-    const gain=this.master.gain,now=this.ctx.currentTime;
-    if(typeof gain.cancelAndHoldAtTime==='function')gain.cancelAndHoldAtTime(now);
-    else{const current=gain.value;gain.cancelScheduledValues(now);gain.setValueAtTime(current,now);}
+  fadeOutput(target,duration){
+    const now=this.ctx.currentTime,previous=this.outputFade;
+    const progress=previous.duration?Math.max(0,Math.min(1,(now-previous.start)/previous.duration)):1;
+    const current=previous.from+(previous.to-previous.from)*(.5-.5*Math.cos(Math.PI*progress));
+    const gain=this.output.gain;gain.cancelScheduledValues(0);
+    const curve=new Float32Array(64);
+    for(let i=0;i<curve.length;i++)curve[i]=current+(target-current)*(.5-.5*Math.cos(Math.PI*i/(curve.length-1)));
+    gain.setValueCurveAtTime(curve,now,duration);
+    this.outputFade={from:current,to:target,start:now,duration};
+    return now+duration;
   }
   async pause(){
     const request=++this.playbackRequest;this.active=false;if(!this.ctx)return;
-    this.holdMasterGain();this.master.gain.linearRampToValueAtTime(0,this.ctx.currentTime+1.5);
+    this.pausing=true;const end=this.fadeOutput(0,1.5);
     // Keep the MP3 running through the fade, then freeze its playback position.
-    await new Promise(resolve=>setTimeout(resolve,1550));
+    // Mobile audio time can lag behind JavaScript time; wait for the audio clock.
+    await new Promise(resolve=>{const check=()=>{
+      if(request!==this.playbackRequest||this.ctx.state!=='running'||this.ctx.currentTime>=end)resolve();
+      else setTimeout(check,50);
+    };setTimeout(check,1550);});
     if(request!==this.playbackRequest||this.active)return;
+    this.pausing=false;this.smooth(this.master.gain,0,.01);
     if(this.file)this.file.pause();await this.ctx.suspend();
   }
   async setFile(file,{loop=true,onEnded=null,autoplay=true}={}){
