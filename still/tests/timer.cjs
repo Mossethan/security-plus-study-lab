@@ -29,7 +29,7 @@ function element(id){if(!elements.has(id))elements.set(id,{value:'',max:id==='pu
 class Audio {constructor(){this.active=false;this.plays=0;this.pauses=0;}apply(){} async play(){if(this.fail)throw Error('Playback blocked');this.active=true;this.plays++;} async pause(){this.active=false;this.pauses++;}variation(){} }
 const storage=new Map();const context={console,FocusAudio:Audio,PomodoroSession,document:{documentElement:{dataset:{}},getElementById:element,querySelectorAll:s=>s==='[data-minutes]'?buttons:s==='[data-timer-mode]'?modeButtons:[],body:{classList:{toggle(){}}},addEventListener(){}},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},setTimeout:()=>0,clearTimeout(){},setInterval(){},Date:class extends Date{static now(){return now}},navigator:{},matchMedia:()=>({matches:true}),devicePixelRatio:1};
 // Session class must share the fake Date used by the app.
-vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../session.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../app.js'),'utf8'),context);
+vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../session.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../library.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../app.js'),'utf8'),context);
 async function run(code){return vm.runInContext(code,context)}
 (async()=>{
  equal(element('timer').textContent,'25:00');await run('toggle()');equal(await run('engine.active'),true);
@@ -48,6 +48,6 @@ async function run(code){return vm.runInContext(code,context)}
  now+=60*60000;await run('tick()');equal(element('timer').textContent,'00:00');equal(JSON.parse(storage.get('still-history')).length,before+1);
  await run('toggle()');equal(element('timer').textContent,'25:00');now+=25*60000;await run('tick()');equal(JSON.parse(storage.get('still-history')).length,before+2);
  await modeButtons[0].listeners.click();equal(element('sessionTitle').textContent,'Pomodoro timer');equal(buttons[0].textContent,'25 / 5');await run('toggle()');now+=25*60000;await run('tick()');equal(await run('session.snapshot().phase'),'break');await modeButtons[1].listeners.click();equal(await run('session.snapshot().phase'),'focus');equal(await run('engine.active'),true);
- const fresh={...context};vm.createContext(fresh);vm.runInContext(fs.readFileSync(path.join(__dirname,'../session.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../app.js'),'utf8'),fresh);equal(vm.runInContext('settings.timerMode',fresh),'single');equal(vm.runInContext('session.pomodoro',fresh),false);
+ const fresh={...context};vm.createContext(fresh);vm.runInContext(fs.readFileSync(path.join(__dirname,'../session.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../library.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../app.js'),'utf8'),fresh);equal(vm.runInContext('settings.timerMode',fresh),'single');equal(vm.runInContext('session.pomodoro',fresh),false);
  console.log(`${checks} checks passed: cycle boundaries, break silence, automatic restart, pause/resume, skip, reset, duration change, background catch-up, history, unlimited mode, playback failure, single-session completion/restart, mode changes, and saved preference.`);
 })().catch(e=>{console.error(e);process.exitCode=1;});

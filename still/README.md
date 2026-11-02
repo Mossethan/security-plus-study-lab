@@ -24,3 +24,14 @@ Live player: https://mossethan.github.io/security-plus-study-lab/still/
 Canonical source: `Mossethan/security-plus-study-lab`, branch `main`, folder `still/`. Future changes should be committed here. The site is served by the existing GitHub Pages deployment from the repository root; updates to `main` redeploy it automatically.
 
 The player has no ChatGPT sign-in dependency. It is a public static page. Personal audio stays on the device, and browser settings/history remain local. Settings from the previous ChatGPT-hosted origin do not transfer automatically.
+
+
+## Local MP3 library
+
+Choose folder reads MP3 files (including subfolders) locally and skips byte-for-byte duplicates using SHA-256 hashes. There is no audio upload. Folder selections are not retained across reloads; select the folder again. The _Still_Duplicates quarantine folder is ignored.
+
+Use the player controls for previous/next track, play/pause, seeking, and automatic track advancement. View tracks opens the playlist and optional shuffle. The playlist repeats at the end. Both timer modes continue to work: Pomodoro breaks pause audio, and single sessions stop it. The small + button accepts one audio file with repeat-one playback, or multiple MP3s as a library.
+
+View tracks also exposes the duplicate CSV report and a Windows cleanup download. The utility in tools/MP3-Cleanup quarantines exact duplicates with a restorable manifest; it never permanently deletes or overwrites files. Its launcher uses Windows PowerShell; native Windows execution has not been verified in this Linux environment.
+
+Run node tests/library.cjs, node tests/audio-files.cjs, and node tests/timer.cjs from this folder.

@@ -1,6 +1,6 @@
 'use strict';
 class FocusAudio {
-  constructor() { this.ctx=null; this.nodes=[]; this.voices=[]; this.nextNote=0; this.step=0; this.seed=Math.floor(Math.random()*10000); this.file=null; this.fileUrl=null; this.active=false; this.settings={music:65,texture:30,pulse:12,rate:16,volume:45,textureType:'brown',preset:'study'}; }
+  constructor() { this.ctx=null; this.nodes=[]; this.voices=[]; this.nextNote=0; this.step=0; this.seed=Math.floor(Math.random()*10000); this.file=null; this.fileUrl=null; this.fileRequest=0; this.active=false; this.settings={music:65,texture:30,pulse:12,rate:16,volume:45,textureType:'brown',preset:'study'}; }
   random(){this.seed=(this.seed*1664525+1013904223)>>>0;return this.seed/4294967296;}
   init(){
     if(this.ctx)return;
@@ -79,14 +79,16 @@ class FocusAudio {
     // Suspend on the next tick; recheck state to avoid racing a quick resume.
     await new Promise(resolve=>setTimeout(resolve,450));if(!this.active)await this.ctx.suspend();
   }
-  async setFile(file){
+  async setFile(file,{loop=true,onEnded=null,autoplay=true}={}){
+    const request=++this.fileRequest;
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Web Audio is unavailable in this browser.');
-    const url=URL.createObjectURL(file),candidate=new Audio();candidate.loop=true;candidate.src=url;
-    try{await new Promise((resolve,reject)=>{candidate.addEventListener('loadedmetadata',resolve,{once:true});candidate.addEventListener('error',reject,{once:true});});}catch(e){URL.revokeObjectURL(url);throw new Error('This file could not be read. Try an MP3, WAV, or M4A audio file.');}
-    this.clearFile();this.file=candidate;this.fileUrl=url;if(this.ctx){this.attachFile();this.smooth(this.synthGain.gain,0,.2);}
-    if(this.active)await this.file.play();
+    const url=URL.createObjectURL(file),candidate=new Audio();candidate.loop=loop;candidate.preload='metadata';candidate.src=url;
+    try{await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error('Audio load timed out.')),15000);candidate.addEventListener('loadedmetadata',()=>{clearTimeout(timeout);resolve();},{once:true});candidate.addEventListener('error',error=>{clearTimeout(timeout);reject(error);},{once:true});});}catch(e){URL.revokeObjectURL(url);throw new Error('This file could not be read. Try an MP3, WAV, or M4A audio file.');}
+    if(request!==this.fileRequest){candidate.removeAttribute('src');candidate.load();URL.revokeObjectURL(url);return false;}
+    this.clearFile(false);this.file=candidate;this.fileUrl=url;candidate.onended=onEnded;if(!autoplay)this.active=false;if(this.ctx){this.attachFile();this.smooth(this.synthGain.gain,0,.2);}
+    if(this.active)await this.file.play();return true;
   }
   attachFile(){this.fileSource=this.ctx.createMediaElementSource(this.file);this.fileSource.connect(this.pulseGain);}
-  clearFile(){if(this.file){this.file.pause();this.file.removeAttribute('src');this.file.load();this.file=null;}if(this.fileSource){this.fileSource.disconnect();this.fileSource=null;}if(this.fileUrl){URL.revokeObjectURL(this.fileUrl);this.fileUrl=null;}if(this.ctx)this.smooth(this.synthGain.gain,1,.5);}
+  clearFile(cancelPending=true){if(cancelPending)this.fileRequest++;if(this.file){this.file.onended=null;this.file.pause();this.file.removeAttribute('src');this.file.load();this.file=null;}if(this.fileSource){this.fileSource.disconnect();this.fileSource=null;}if(this.fileUrl){URL.revokeObjectURL(this.fileUrl);this.fileUrl=null;}if(this.ctx)this.smooth(this.synthGain.gain,1,.5);}
   variation(){this.seed=Math.floor(Math.random()*100000);if(!this.ctx)return;this.voices.forEach(v=>{this.smooth(v.g.gain,.0001,.3);try{v.o.stop(this.ctx.currentTime+2);}catch{}});this.nextNote=this.ctx.currentTime+.1;this.step=Math.floor(this.random()*4)*4;if(this.active)this.schedule();}
 }
