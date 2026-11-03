@@ -1,7 +1,7 @@
 'use strict';
 const MUSIC_GENRES=[{key:'acoustic',label:'Acoustic'},{key:'atmospheric',label:'Atmospheric'},{key:'cinematic',label:'Cinematic'},{key:'classical',label:'Classical'},{key:'drone',label:'Drone'},{key:'electronic',label:'Electronic'},{key:'grooves',label:'Grooves'},{key:'lofi',label:'Lofi'},{key:'piano',label:'Piano'},{key:'postrock',label:'Post rock'}];
 const MUSIC_EFFECTS=[{key:'low',label:'Low'},{key:'medium',label:'Medium'},{key:'high',label:'High'},{key:'unknown',label:'Unlabeled'}];
-function mp3Path(file){return file.webkitRelativePath||file.name;}
+function mp3Path(file){return file.webkitRelativePath||file.stillPath||file.name;}
 function isPlayableMp3(file){return /\.mp3$/i.test(file.name)&&!/(^|[\\/])_Still_Duplicates([\\/]|$)/i.test(mp3Path(file));}
 function normalizedMusicText(value){return value.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[_\-]+/g,' ').replace(/[^a-zA-Z0-9\s]/g,' ').toLowerCase().replace(/\s+/g,' ').trim();}
 function genrePattern(key){return key==='lofi'?'lo[\\s_-]*fi':key==='postrock'?'post[\\s_-]*rock':key==='grooves'?'grooves?':key;}
