@@ -47,3 +47,10 @@ const library=new MP3Library();assert.equal(library.neighbor(),-1);library.load(
 library.setFilters([],['high']);assert.equal(library.current.title,'Organics');assert.equal(library.neighbor(1),0);library.setShuffle(true,()=>0);assert.equal(library.order[0],library.index);assert.equal(library.order.length,2);
 library.setFilters(['drone'],['low']);assert.equal(library.current,null);assert.equal(library.neighbor(),-1);library.setFilters([],[]);assert.equal(library.tracks.length,5);library.clear();assert.equal(library.allTracks.length,0);
 console.log('Filename/category checks passed for all ten samples, legacy leading genre labels, title-word safeguards, ten genres, NEL/folder labels, multi-select logic, unlabeled tracks, queue retention/shuffle, and no browser hashing.');
+const starts=new MP3Library();assert.equal(starts.pickStart(),-1);starts.load({tracks});starts.setFilters([],['high']);
+assert.equal(starts.tracks.length,2);assert.equal(starts.pickStart('',()=>0),0);assert.equal(starts.pickStart('',()=>.999),1);
+assert.equal(starts.pickStart(starts.tracks[0].path,()=>0),1);assert.equal(starts.pickStart(starts.tracks[1].path,()=>.999),0);
+starts.setFilters(['lofi'],['high']);assert.equal(starts.tracks.length,1);assert.equal(starts.pickStart(starts.current.path),0);
+starts.setFilters(['drone'],['low']);assert.equal(starts.pickStart(),-1);
+starts.load({tracks:[tracks[0],tracks[0]]});starts.setFilters([],[]);assert.equal(starts.pickStart(tracks[0].path,()=>.999),1);
+console.log('Random starting-track checks passed: filtered matches only, first/last random choices, previous-track exclusion, one/no match, and duplicate-path fallback.');

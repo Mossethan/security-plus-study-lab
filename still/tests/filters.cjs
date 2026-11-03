@@ -66,6 +66,13 @@ const run=s=>vm.runInContext(s,context);
  // Manual selection wins over an old startup read, and saved filters still persist.
  restore=slowRestore();run('settings.genres=[];settings.effects=[];library.setFilters([],[])');await run('importMp3Folder([files[0]])');run('finishQueuedLoad(queuedRecord)');await restore;assert.equal(run('library.current.title'),'Causeway');assert.equal(run('restoringMusic'),false);
  run('settings.genres=["acoustic"];settings.effects=["unknown"];save()');
+ // Reopening chooses another filtered match even when ongoing shuffle is off.
+ const otherSource=new context.File(['another fixture'],'Other_Focus_DeepWork_Acoustic_30_80bpm.mp3',{type:'audio/mpeg'});
+ const excludedSource=new context.File(['outside filters'],'Excluded_Focus_DeepWork_Piano_30_80bpm_LowNEL.mp3',{type:'audio/mpeg'});
+ context.randomRecord={kind:'files',entries:[source,otherSource,excludedSource].map(file=>({file,name:file.name,path:'Music/'+file.name}))};
+ run('session.pause();engine.clearFile();settings.shuffle=false;library.setFilters(settings.genres,settings.effects);musicStore.load=async()=>randomRecord');
+ storage.set('still-last-track','Music/'+source.name);const randomPlays=run('engine.plays');await run('restoreRememberedLibrary()');assert.equal(run('library.current.title'),'Other');assert.equal(run('library.tracks.length'),2);assert.equal(run('engine.plays'),randomPlays);assert.equal(run('session.running'),false);
+ assert.equal(storage.get('still-last-track'),'Music/'+otherSource.name);await run('restoreRememberedLibrary()');assert.equal(run('library.current.title'),'Moon Cycles');assert.equal(run('engine.plays'),randomPlays);assert.equal(run('settings.shuffle'),false);
  const fresh={...context};vm.createContext(fresh);vm.runInContext(code,fresh);assert.equal(vm.runInContext("settings.effects[0]",fresh),'unknown');assert.equal(vm.runInContext("settings.genres[0]",fresh),'acoustic');
  assert.equal(vm.runInContext('settings.rate',fresh),40);
  console.log('Filter/playback checks passed: saved genre/effect filters, silent queued start while loading, timer waits for music, cancellation, missing library, empty matches, permission reconnect, manual selection priority, private save/forget/quota behavior, optional mix, and persisted pulse rate.');

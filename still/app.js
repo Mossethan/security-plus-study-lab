@@ -28,6 +28,7 @@ const session=new PomodoroSession(settings.minutes,settings.timerMode==='pomodor
 let variation=1,uploadName='',toastTimeout,toastSwapTimeout,toastClearTimeout,reportedFocus=0,lastPhase='focus';
 let soundRequest=0,toggleRequest=0;
 const save=()=>{try{localStorage.setItem('still-settings',JSON.stringify({...settings,...fileMixBase}));}catch{$('savedStatus').textContent='Settings could not be saved in this browser';}};
+function lastTrackPath(){try{return localStorage.getItem('still-last-track')||'';}catch{return '';}}
 function beginFileMix(){
  if(!fileMixBase)fileMixBase={music:settings.music,texture:settings.texture,pulse:settings.pulse};
  settings.music=0;settings.texture=0;settings.pulse=0;engine.apply(settings);
@@ -186,6 +187,7 @@ async function selectLibraryTrack(index,start=false,resetMix=false){
    const ready=await engine.setFile(track.file,{loop:false,autoplay:false,onEnded:()=>changeTrack(1)});if(!ready)return;
    if(!fileMixBase||resetMix)beginFileMix();
    library.select(index);uploadName=track.file.name;bindTrackEvents();
+   try{localStorage.setItem('still-last-track',track.path);}catch{}
    if(start&&session.snapshot().phase!=='break'){if(session.status==='complete')reportedFocus=0;session.start();}
    render();await syncSound();
  }catch(error){handleAudioError(error);await engine.pause();toast('This track could not play. Choose another track from your library.');}
@@ -246,7 +248,7 @@ async function importMp3Folder(files,{restore=false,folder=null}={}){
   if(!result.tracks.length){toast('No MP3s found. Choose your music folder or MP3 files.');return;}
   if(!restore)rememberedFolder=null;activeFolder=folder;singleSourceFile=null;
   library.load(result);library.setShuffle(settings.shuffle);
-  if(library.tracks.length){const first=library.index;library.index=-1;await selectLibraryTrack(first,false,true);}
+  if(library.tracks.length){const first=restore?library.pickStart(lastTrackPath()):library.index;library.index=-1;await selectLibraryTrack(first,false,true);library.setShuffle(settings.shuffle);}
   else{session.pause();await engine.pause();engine.clearFile();uploadName='';render();}
   if(revision!==libraryRevision)return false;
   if(!restore){openLibrary();toast(`${library.allTracks.length} MP3s loaded. Choose genres and effect levels to tailor your playlist.`);if(settings.rememberLibrary)await rememberCurrentLibrary(folder,revision);}

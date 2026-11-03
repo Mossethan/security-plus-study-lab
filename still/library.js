@@ -45,6 +45,12 @@ class MP3Library {
  get current(){return this.tracks[this.index]||null;}
  select(index){if(!Number.isInteger(index)||index<0||index>=this.tracks.length)return null;this.index=index;return this.current;}
  neighbor(direction=1){if(!this.order.length)return -1;return this.order[(this.order.indexOf(this.index)+direction+this.order.length)%this.order.length];}
+ pickStart(previousPath='',random=Math.random){
+  if(!this.tracks.length)return -1;
+  const all=this.tracks.map((track,index)=>({track,index})),alternatives=all.filter(({track})=>track.path!==previousPath);
+  const choices=alternatives.length?alternatives:all;
+  return choices[Math.floor(random()*choices.length)].index;
+ }
  setFilters(genres=[],effects=[]){
   const previous=this.current?.file;this.genres=[...genres];this.effects=[...effects];this.tracks=filterMp3Tracks(this.allTracks,genres,effects);
   const kept=this.tracks.findIndex(track=>track.file===previous);this.index=kept>=0?kept:this.tracks.length?0:-1;this.setShuffle(this.shuffle);
