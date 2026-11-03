@@ -21,24 +21,32 @@ const library=new MP3Library();library.shuffle=settings.shuffle;library.setFilte
 let loadingTrack=false,importingLibrary=false,draftGenres=[],draftEffects=[],fileMixBase=null;
 const previousIcon=$('resetBtn').innerHTML,nextIcon=$('newBtn').innerHTML;
 const session=new PomodoroSession(settings.minutes,settings.timerMode==='pomodoro');
-let busy=false,variation=1,uploadName='',toastTimeout,reportedFocus=0,lastPhase='focus';
-let soundQueue=Promise.resolve();
+let variation=1,uploadName='',toastTimeout,toastSwapTimeout,toastClearTimeout,reportedFocus=0,lastPhase='focus';
+let soundRequest=0,toggleRequest=0;
 const save=()=>{try{localStorage.setItem('still-settings',JSON.stringify({...settings,...fileMixBase}));}catch{$('savedStatus').textContent='Settings could not be saved in this browser';}};
 function beginFileMix(){
  if(!fileMixBase)fileMixBase={music:settings.music,texture:settings.texture,pulse:settings.pulse};
  settings.music=0;settings.texture=0;settings.pulse=0;engine.apply(settings);
 }
 function endFileMix(){if(fileMixBase){Object.assign(settings,fileMixBase);fileMixBase=null;engine.apply(settings);}}
-function toast(s){$('status').textContent=s;clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('status').textContent='',6500);}
-function syncSound(){
-  soundQueue=soundQueue.catch(()=>{}).then(async()=>{
+function toast(s){
+ const status=$('status');clearTimeout(toastTimeout);clearTimeout(toastSwapTimeout);clearTimeout(toastClearTimeout);
+ const show=()=>{
+  status.textContent=s;status.classList.toggle('toast-hiding',false);
+  toastTimeout=setTimeout(()=>{status.classList.toggle('toast-hiding',true);toastClearTimeout=setTimeout(()=>{status.textContent='';status.classList.toggle('toast-hiding',false);},350);},6500);
+ };
+ if(status.textContent&&status.textContent!==s){status.classList.toggle('toast-hiding',true);toastSwapTimeout=setTimeout(show,350);}
+ else show();
+}
+async function syncSound(){
+  const request=++soundRequest;
+  try{
     const shouldPlay=session.running&&session.snapshot().phase==='focus';
-    if(shouldPlay&&!engine.active)await engine.play();
-    else if(!shouldPlay&&(engine.active||engine.ctx?.state==='running'))await engine.pause();
-  });return soundQueue;
+    if(shouldPlay&&(!engine.active||engine.pausing))await engine.play();
+    else if(!shouldPlay&&(engine.active||engine.ctx))await engine.pause();
+  }catch(error){if(request===soundRequest)throw error;}
 }
 function noMatchingTracks(){return library.allTracks.length>0&&library.tracks.length===0;}
-function setBusy(value){busy=value;$('playBtn').disabled=value||noMatchingTracks();$('timerPlayBtn').disabled=value||noMatchingTracks();}
 function handleAudioError(error){session.pause();render();toast(error.message||'Audio could not resume. Press Resume to try again.');}
 
 function applyTheme(){document.documentElement.dataset.theme=settings.theme;$('theme').value=settings.theme;}
@@ -81,30 +89,31 @@ function renderTimer(){
  $('skipBreakBtn').hidden=snap.phase!=='break';
 }
 async function toggle(){
- if(busy)return;if(noMatchingTracks()){toast('No tracks match these filters. Open Browse & filters to change them.');return;}setBusy(true);
+ if(noMatchingTracks()){toast('No tracks match these filters. Open Browse & filters to change them.');return;}
+ const request=++toggleRequest;
  try{if(session.running)session.pause();else{if(session.status==='complete')reportedFocus=0;session.start();}render();await syncSound();}
- catch(error){handleAudioError(error);await engine.pause();}
- finally{setBusy(false);render();}
+ catch(error){if(request!==toggleRequest)return;handleAudioError(error);await engine.pause();}
+ finally{if(request===toggleRequest)render();}
 }
 async function resetSession(){
- if(busy)return;session.reset(settings.minutes);reportedFocus=0;lastPhase='focus';render();
+ session.reset(settings.minutes);reportedFocus=0;lastPhase='focus';render();
  try{await syncSound();}catch(error){handleAudioError(error);}
  toast(session.running?'New focus round started.':'Timer reset. Ready when you are.');
 }
 $('playBtn').addEventListener('click',toggle);$('timerPlayBtn').addEventListener('click',toggle);
 $('resetBtn').addEventListener('click',()=>library.current?changeTrack(-1):resetSession());$('timerResetBtn').addEventListener('click',resetSession);
-$('skipBreakBtn').addEventListener('click',async()=>{if(busy)return;session.skipBreak();lastPhase='focus';render();try{await syncSound();}catch(error){handleAudioError(error);}});
+$('skipBreakBtn').addEventListener('click',async()=>{session.skipBreak();lastPhase='focus';render();try{await syncSound();}catch(error){handleAudioError(error);}});
 $('newBtn').addEventListener('click',()=>{if(library.current){changeTrack(1);return;}if(uploadName){toast('Remove your audio file to return to generative soundscapes.');return;}variation++;engine.variation();toast(`Fresh variation ${variation}. Same space, a slightly different sound.`);});
 for(const name of ['music','texture','pulse','volume'])$(name).addEventListener('input',e=>{settings[name]=Number(e.target.value);engine.apply(settings);save();render();});
 $('rate').addEventListener('change',e=>{settings.rate=Number(e.target.value);engine.apply(settings);save();render();});
 document.querySelectorAll('[data-texture]').forEach(b=>b.addEventListener('click',()=>{settings.textureType=b.dataset.texture;engine.apply(settings);save();render();}));
 document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{if(settings.preset===b.dataset.preset)return;const mix=fileMixBase?{music:settings.music,texture:settings.texture,pulse:settings.pulse,rate:settings.rate,textureType:settings.textureType}:{};settings={...settings,...presets[b.dataset.preset],...mix,preset:b.dataset.preset};if(fileMixBase){const p=presets[b.dataset.preset];fileMixBase={music:p.music,texture:p.texture,pulse:p.pulse};}engine.apply(settings);engine.variation();variation=1;save();render();}));
-document.querySelectorAll('[data-minutes]').forEach(b=>b.addEventListener('click',async()=>{if(busy)return;settings.minutes=Number(b.dataset.minutes);session.reset(settings.minutes);reportedFocus=0;lastPhase='focus';save();render();try{await syncSound();}catch(error){handleAudioError(error);}if(session.running)toast(settings.timerMode==='pomodoro'?'New focus/break cycle started.':'New single session started.');}));
+document.querySelectorAll('[data-minutes]').forEach(b=>b.addEventListener('click',async()=>{settings.minutes=Number(b.dataset.minutes);session.reset(settings.minutes);reportedFocus=0;lastPhase='focus';save();render();try{await syncSound();}catch(error){handleAudioError(error);}if(session.running)toast(settings.timerMode==='pomodoro'?'New focus/break cycle started.':'New single session started.');}));
 document.querySelectorAll('[data-timer-mode]').forEach(b=>b.addEventListener('click',async()=>{
- if(busy||settings.timerMode===b.dataset.timerMode)return;
+ if(settings.timerMode===b.dataset.timerMode)return;
  settings.timerMode=b.dataset.timerMode;session.setMode(settings.timerMode==='pomodoro');reportedFocus=0;lastPhase='focus';save();render();
- try{await syncSound();}catch(error){handleAudioError(error);}
  toast(settings.timerMode==='pomodoro'?'Pomodoro mode. Focus and break cycles repeat automatically.':'Single session mode. Audio stops when the timer ends.');
+ try{await syncSound();}catch(error){handleAudioError(error);}
 }));
 $('theme').addEventListener('change',e=>{settings.theme=e.target.value;applyTheme();save();});
 $('uploadBtn').addEventListener('click',()=>$('fileInput').click());
@@ -131,7 +140,7 @@ function renderLibraryControls(){
  $('newBtn').setAttribute('aria-label',hasLibrary?'Next track':'Create a new sound variation');$('newBtn').title=hasLibrary?'Next track':'New variation';
  $('resetBtn').innerHTML=hasLibrary?'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zm12 0v14L9 12z"/></svg>':previousIcon;
  $('newBtn').innerHTML=hasLibrary?'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM6 5l9 7-9 7z"/></svg>':nextIcon;
- $('resetBtn').disabled=noMatchingTracks();$('newBtn').disabled=noMatchingTracks();$('playBtn').disabled=busy||noMatchingTracks();$('timerPlayBtn').disabled=busy||noMatchingTracks();
+ $('resetBtn').disabled=noMatchingTracks();$('newBtn').disabled=noMatchingTracks();$('playBtn').disabled=noMatchingTracks();$('timerPlayBtn').disabled=noMatchingTracks();
 }
 async function selectLibraryTrack(index,start=false,resetMix=false){
  if(loadingTrack)return;const track=library.tracks[index];if(!track)return;loadingTrack=true;

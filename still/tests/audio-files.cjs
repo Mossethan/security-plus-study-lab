@@ -26,6 +26,14 @@ const context={Audio:Media,window:{AudioContext:function(){}},URL:{createObjectU
  assert.ok(Math.abs(automation.at(-1)[1][0]-.75)<.001);fadeTimers.shift()();await interrupted;assert.equal(fading.file.paused,false);assert.equal(suspends,1);assert.equal(fading.active,true);
  const oldPause=fading.pause(),newPause=fading.pause();fadeTimers.shift()();await oldPause;assert.equal(suspends,1);assert.equal(fading.file.paused,false);fading.ctx.currentTime=17;fadeTimers.shift()();await newPause;assert.equal(suspends,2);
  await fading.play();const osPause=fading.pause();fading.ctx.state='interrupted';fadeTimers.shift()();await osPause;assert.equal(fading.file.paused,true);assert.equal(suspends,3);
+ // A late context resume or media-play completion cannot undo a newer pause.
+ const originalResume=fading.ctx.resume,originalMediaPlay=fading.file.play;let finishResume;
+ fading.ctx.resume=()=>new Promise(resolve=>{finishResume=resolve;});
+ const lateResume=fading.play(),pauseDuringResume=fading.pause();finishResume();await lateResume;assert.equal(fading.active,false);fadeTimers.shift()();await pauseDuringResume;
+ fading.ctx.resume=originalResume;let finishMedia,signalMedia;const enteredMedia=new Promise(resolve=>{signalMedia=resolve;});
+ fading.file.play=()=>new Promise(resolve=>{finishMedia=resolve;signalMedia();});const lateMedia=fading.play();await enteredMedia;
+ const pauseDuringMedia=fading.pause();finishMedia();await lateMedia;assert.equal(fading.active,false);fading.ctx.currentTime+=2;fadeTimers.shift()();await pauseDuringMedia;
+ let rejectMedia,signalFailure;const enteredFailure=new Promise(resolve=>{signalFailure=resolve;});fading.file.play=()=>new Promise((resolve,reject)=>{rejectMedia=reject;signalFailure();});const failedOldPlay=fading.play();await enteredFailure;const latestPause=fading.pause();rejectMedia(Error('Old play aborted'));await failedOldPlay;assert.equal(fading.active,false);fading.ctx.currentTime+=2;fadeTimers.shift()();await latestPause;fading.file.play=originalMediaPlay;
  // Verify the real graph keeps imported audio audible with all optional layers at zero.
  const param=()=>({value:0,events:[],setTargetAtTime(value){this.value=value;},cancelScheduledValues(){},setValueAtTime(v){this.value=v;},setValueCurveAtTime(curve,start,duration){this.events.push({curve:Array.from(curve),start,duration});}});
  function audioNode(){const n={connections:[],connect(target){this.connections.push(target);return target;},disconnect(){},start(){},stop(){}};for(const key of ['gain','frequency','Q','threshold','knee','ratio','attack','release'])n[key]=param();return n;}

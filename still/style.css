@@ -46,3 +46,9 @@ dialog{border:1px solid var(--accent-border);border-radius:16px;background:var(-
 
 .studio,.mixer{min-width:0}
 @media(max-width:760px){.studio{grid-template-columns:minmax(0,1fr)}.orb-stage{width:100%}}
+
+/* Status messages ease in/out, including replacement messages. */
+.status:not(:empty){animation:toast-appear .3s ease-out both}
+.status.toast-hiding:not(:empty){animation:toast-disappear .35s ease-in both}
+@keyframes toast-appear{from{opacity:0}to{opacity:1}}
+@keyframes toast-disappear{from{opacity:1}to{opacity:0}}

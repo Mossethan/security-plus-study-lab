@@ -73,8 +73,11 @@ class FocusAudio {
     }
   }
   async play(){
-    ++this.playbackRequest;this.pausing=false;this.init();await this.ctx.resume();
-    if(this.file){try{await this.file.play();}catch(e){throw new Error('That file could not play. Choose a supported MP3, WAV, or M4A file.');}}
+    const request=++this.playbackRequest;this.pausing=false;this.init();
+    try{await this.ctx.resume();}catch(error){if(request!==this.playbackRequest)return;throw error;}
+    if(request!==this.playbackRequest)return;
+    if(this.file){try{await this.file.play();}catch(e){if(request!==this.playbackRequest)return;throw new Error('That file could not play. Choose a supported MP3, WAV, or M4A file.');}}
+    if(request!==this.playbackRequest)return;
     this.active=true;this.apply(this.settings);this.fadeOutput(1,.3);this.schedule();
     if(!this.scheduler)this.scheduler=setInterval(()=>this.schedule(),1000);
   }

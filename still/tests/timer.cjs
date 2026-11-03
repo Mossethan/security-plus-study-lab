@@ -41,7 +41,7 @@ for(const minutes of [25,50,90]){
 let now=0;const elements=new Map(),buttons=[25,50,90,0].map(minutes=>({dataset:{minutes:String(minutes)},classList:{toggle(){}},setAttribute(){},listeners:{},addEventListener(name,fn){this.listeners[name]=fn}}));
 const modeButtons=['pomodoro','single'].map(timerMode=>({dataset:{timerMode},classList:{toggle(){}},setAttribute(){},listeners:{},addEventListener(name,fn){this.listeners[name]=fn}}));
 function element(id){if(!elements.has(id))elements.set(id,{value:'',max:id==='pulse'?50:100,textContent:'',innerHTML:'',style:{setProperty(){}},classList:{toggle(){}},setAttribute(){},listeners:{},addEventListener(name,fn){this.listeners[name]=fn},getContext(){return {setTransform(){},clearRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}}},clientWidth:350,clientHeight:270,showModal(){},close(){}});return elements.get(id);}
-class Audio {constructor(){this.active=false;this.plays=0;this.pauses=0;}apply(){} async play(){if(this.fail)throw Error('Playback blocked');this.active=true;this.plays++;} async pause(){this.active=false;this.pauses++;}variation(){} }
+class Audio {constructor(){this.active=false;this.plays=0;this.pauses=0;this.pendingPauses=[];}apply(){} async play(){if(this.fail)throw Error('Playback blocked');this.active=true;this.plays++;} async pause(){this.active=false;this.pauses++;if(this.deferPause)await new Promise(resolve=>this.pendingPauses.push(resolve));}variation(){} }
 const storage=new Map();const context={console,FocusAudio:Audio,PomodoroSession,document:{documentElement:{dataset:{}},getElementById:element,querySelectorAll:s=>s==='[data-minutes]'?buttons:s==='[data-timer-mode]'?modeButtons:[],body:{classList:{toggle(){}}},addEventListener(){}},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},setTimeout:()=>0,clearTimeout(){},setInterval(){},Date:class extends Date{static now(){return now}},navigator:{},matchMedia:()=>({matches:true}),devicePixelRatio:1};
 // Session class must share the fake Date used by the app.
 vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../session.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../library.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../app.js'),'utf8'),context);
@@ -69,7 +69,22 @@ async function run(code){return vm.runInContext(code,context)}
  now+=60*60000;await run('tick()');equal(element('timer').textContent,'00:00');equal(JSON.parse(storage.get('still-history')).length,before+1);
  await run('toggle()');equal(element('timer').textContent,'25:00');now+=25*60000;await run('tick()');equal(JSON.parse(storage.get('still-history')).length,before+2);
  await modeButtons[0].listeners.click();equal(element('sessionTitle').textContent,'Pomodoro timer');equal(buttons[0].textContent,'25 / 5');await run('toggle()');now+=25*60000;await run('tick()');equal(await run('session.snapshot().phase'),'break');await modeButtons[1].listeners.click();equal(await run('session.snapshot().phase'),'focus');equal(await run('engine.active'),true);
- const pauses=await run('engine.pauses');await run('session.pause();engine.active=false;engine.ctx={state:"running"}');await run('syncSound()');equal(await run('engine.pauses'),pauses+1);
+ const pauses=await run('engine.pauses');await run('session.pause();engine.active=false;engine.ctx={state:"running",sampleRate:48000}');await run('syncSound()');equal(await run('engine.pauses'),pauses+1);
+ // Button state must change before an unfinished fade resolves; newer clicks win.
+ await run('toggle()');await run('engine.deferPause=true');
+ const firstPause=run('toggle()');equal(element('playText').textContent,'Resume session');equal(element('playBtn').disabled,false);equal(element('timerPlayBtn').disabled,false);equal(await run('session.running'),false);
+ await run('toggle()');equal(await run('engine.active'),true);equal(element('playText').textContent,'Pause session');
+ const secondPause=run('toggle()');await run('toggle()');const finalPause=run('toggle()');equal(element('playText').textContent,'Resume session');equal(element('playBtn').disabled,false);
+ await run('engine.pendingPauses.splice(0).forEach(resolve=>resolve())');await Promise.all([firstPause,secondPause,finalPause]);equal(await run('session.running'),false);equal(await run('engine.active'),false);equal(element('playText').textContent,'Resume session');await run('engine.deferPause=false');
+ // Toasts remain present for their exit animation; replacements cancel old timers.
+ const timers=new Map(),toastClasses=new Set();let nextTimer=0;
+ context.setTimeout=(fn,delay)=>{const id=++nextTimer;timers.set(id,{fn,delay});return id;};context.clearTimeout=id=>timers.delete(id);
+ element('status').classList={toggle:(name,on)=>on?toastClasses.add(name):toastClasses.delete(name)};element('status').textContent='';
+ const fireToast=delay=>{const entry=[...timers].find(([,t])=>t.delay===delay);assert.ok(entry);timers.delete(entry[0]);entry[1].fn();};
+ await run('toast("Pomodoro enabled")');equal(element('status').textContent,'Pomodoro enabled');equal(toastClasses.has('toast-hiding'),false);
+ fireToast(6500);equal(toastClasses.has('toast-hiding'),true);equal(element('status').textContent,'Pomodoro enabled');fireToast(350);equal(element('status').textContent,'');
+ await run('toast("First message");toast("Second message");toast("Latest message")');equal(element('status').textContent,'First message');equal(toastClasses.has('toast-hiding'),true);equal(timers.size,1);
+ fireToast(350);equal(element('status').textContent,'Latest message');equal(toastClasses.has('toast-hiding'),false);fireToast(6500);fireToast(350);equal(element('status').textContent,'');
  const fresh={...context};vm.createContext(fresh);vm.runInContext(fs.readFileSync(path.join(__dirname,'../session.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../library.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../app.js'),'utf8'),fresh);equal(vm.runInContext('settings.timerMode',fresh),'single');equal(vm.runInContext('session.pomodoro',fresh),false);
  console.log(`${checks} checks passed: cycle boundaries, break silence, automatic restart, pause/resume, skip, reset, duration change, background catch-up, history, unlimited mode, playback failure, single-session completion/restart, mode changes, and saved preference.`);
 })().catch(e=>{console.error(e);process.exitCode=1;});
