@@ -72,6 +72,7 @@ class FocusAudio {
       this.step++;this.nextNote+=s.preset==='work'?4:5;
     }
   }
+  preparePlayback(){this.init();return this.ctx.resume();}
   async play(){
     const request=++this.playbackRequest;this.pausing=false;this.init();
     try{await this.ctx.resume();}catch(error){if(request!==this.playbackRequest)return;throw error;}

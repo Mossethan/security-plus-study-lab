@@ -4,10 +4,11 @@ const presetButtons=['study','work','reading'].map(preset=>({dataset:{preset},cl
 function node(){return {value:'',max:100,textContent:'',innerHTML:'',hidden:false,disabled:false,open:false,children:[],style:{setProperty(){}},classList:{toggle(){}},listeners:{},setAttribute(){},addEventListener(n,f){this.listeners[n]=f},replaceChildren(){this.children=[]},append(...children){this.children.push(...children)},showModal(){this.open=true},close(){this.open=false},getContext(){return {setTransform(){},clearRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}}},clientWidth:350,clientHeight:270};}
 function element(id){if(!elements.has(id))elements.set(id,node());return elements.get(id);}
 class Audio{
- constructor(){this.active=false;this.file=null;this.loads=0;this.plays=0;}
+ constructor(){this.active=false;this.file=null;this.loads=0;this.plays=0;this.prepares=0;}
  apply(settings){this.applied={...settings};}variation(){}
  async setFile(file,options={}){this.loads++;this.active=false;this.file={name:file.name,duration:1800,currentTime:0,onended:options.onEnded,addEventListener(){}};return true;}
  clearFile(){this.file=null;this.active=false;}
+ async preparePlayback(){this.prepares++;}
  async play(){this.active=true;this.plays++;}async pause(){this.active=false;}
 }
 const context={console,FocusAudio:Audio,document:{documentElement:{dataset:{}},getElementById:element,querySelectorAll:s=>s==='[data-preset]'?presetButtons:[],createElement:node,body:{classList:{toggle(){}}},addEventListener(){}},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},setTimeout:()=>0,clearTimeout(){},setInterval(){},Date:class extends Date{static now(){return now}},navigator:{},matchMedia:()=>({matches:true}),devicePixelRatio:1};
@@ -48,7 +49,24 @@ const run=s=>vm.runInContext(s,context);
  await element('reconnectLibrary').listeners.click();assert.equal(permissionRequests,1);assert.equal(run('engine.active'),false);assert.equal(element('reconnectLibrary').hidden,true);
  await run('rememberCurrentLibrary()');assert.equal(linked,1);await element('forgetLibrary').listeners.click();assert.equal(forgotten,1);assert.equal(run('settings.rememberLibrary'),false);assert.equal(run('hasRememberedLibrary'),false);assert.equal(run('library.allTracks.length'),1);
  run('settings.rememberLibrary=true;musicStore.saveFiles=async()=>{const error=new Error("Full");error.name="QuotaExceededError";throw error;}');await run('rememberCurrentLibrary(null)');assert.match(element('libraryMemory').textContent,/Not enough browser storage/);assert.equal(run('hasRememberedLibrary'),false);
+ // A play request during restore is silent, cancellable, and starts only matching music.
+ context.queuedRecord={kind:'files',entries:[{file:source,name:source.name,path:'Music/Acoustic/'+source.name}]};
+ const slowRestore=()=>{
+  run('session.reset(25,Date.now(),false);engine.clearFile();library.clear();uploadName="";settings.genres=["acoustic"];settings.effects=["unknown"];library.setFilters(settings.genres,settings.effects);settings.rememberLibrary=true;musicStore.load=()=>new Promise(resolve=>{this.finishQueuedLoad=resolve})');
+  return run('restoreRememberedLibrary()');
+ };
+ let restore=slowRestore(),beforePlays=run('engine.plays');assert.equal(element('trackTitle').textContent,'Loading your music…');
+ await run('toggle()');assert.equal(element('playText').textContent,'Cancel start');assert.equal(run('session.running'),false);assert.equal(run('engine.active'),false);assert.equal(run('engine.plays'),beforePlays);assert.equal(run('engine.prepares'),1);
+ now+=60000;await run('tick()');assert.equal(element('timer').textContent,'25:00');run('finishQueuedLoad(queuedRecord)');await restore;assert.equal(run('engine.plays'),beforePlays+1);assert.equal(run('library.current.title'),'Moon Cycles');assert.equal(run('session.running'),true);assert.equal(element('timer').textContent,'25:00');
+ restore=slowRestore();beforePlays=run('engine.plays');await run('toggle()');await run('toggle()');run('finishQueuedLoad(queuedRecord)');await restore;assert.equal(run('session.running'),false);assert.equal(run('engine.plays'),beforePlays);assert.equal(element('playText').textContent,'Begin session');
+ restore=slowRestore();beforePlays=run('engine.plays');await run('toggle()');run('finishQueuedLoad(null)');await restore;assert.equal(run('libraryRestoreFailed'),true);assert.equal(run('queuedLibraryPlay'),false);assert.equal(run('engine.plays'),beforePlays);assert.equal(element('useGenerated').hidden,false);
+ await element('useGenerated').listeners.click();assert.equal(run('libraryRestoreFailed'),false);assert.equal(run('engine.plays'),beforePlays);
+ restore=slowRestore();await run('toggle()');run('settings.genres=["lofi"];settings.effects=["high"];library.setFilters(settings.genres,settings.effects);finishQueuedLoad(queuedRecord)');await restore;assert.equal(run('noMatchingTracks()'),true);assert.equal(run('engine.plays'),beforePlays);assert.equal(run('queuedLibraryPlay'),false);
+ restore=slowRestore();run('finishQueuedLoad(savedLibrary)');await restore;assert.equal(element('playText').textContent,'Reconnect and play');beforePlays=run('engine.plays');await run('toggle()');assert.equal(run('engine.plays'),beforePlays+1);assert.equal(run('libraryRestoreFailed'),false);
+ // Manual selection wins over an old startup read, and saved filters still persist.
+ restore=slowRestore();run('settings.genres=[];settings.effects=[];library.setFilters([],[])');await run('importMp3Folder([files[0]])');run('finishQueuedLoad(queuedRecord)');await restore;assert.equal(run('library.current.title'),'Causeway');assert.equal(run('restoringMusic'),false);
+ run('settings.genres=["acoustic"];settings.effects=["unknown"];save()');
  const fresh={...context};vm.createContext(fresh);vm.runInContext(code,fresh);assert.equal(vm.runInContext("settings.effects[0]",fresh),'unknown');assert.equal(vm.runInContext("settings.genres[0]",fresh),'acoustic');
  assert.equal(vm.runInContext('settings.rate',fresh),40);
- console.log('Filter/playback checks passed: imported music starts alone, optional layers survive navigation/auto-advance/presets, generative mix restores and stays saved, single-file/folder defaults, OR/AND filters, current-track retention, empty-match silence, recovery, saved filters, private restore without autoplay, read-only permission reconnect, forget, quota errors, and persisted 40 Hz selection.');
+ console.log('Filter/playback checks passed: saved genre/effect filters, silent queued start while loading, timer waits for music, cancellation, missing library, empty matches, permission reconnect, manual selection priority, private save/forget/quota behavior, optional mix, and persisted pulse rate.');
 })().catch(e=>{console.error(e);process.exitCode=1});
